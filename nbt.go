@@ -13,13 +13,45 @@ var (
 	ErrDuplicateName  = errors.New("duplicate name in compound")
 )
 
+const (
+	idEnd Byte = iota
+	idByte
+	idShort
+	idInt
+	idLong
+	idFloat
+	idDouble
+	idByteArray
+	idString
+	idList
+	idCompound
+	idIntArray
+	idLongArray
+)
+
+type (
+	End       struct{}
+	Byte      int8
+	Short     int16
+	Int       int32
+	Long      int64
+	Float     float32
+	Double    float64
+	ByteArray []Byte
+	String    string
+	List      interface{}
+	Compound  map[String]interface{}
+	IntArray  []Int
+	LongArray []Long
+)
+
 type NBT struct {
-	Name string
-	Tags map[string]interface{}
+	Name String
+	Tags Compound
 }
 
 func Decode(r io.Reader) (*NBT, error) {
-	var id byte
+	var id Byte
 	if err := read(r, &id); err != nil {
 		return nil, err
 	}
@@ -45,8 +77,8 @@ func read(r io.Reader, v interface{}) error {
 	return binary.Read(r, binary.BigEndian, v)
 }
 
-func readString(r io.Reader) (string, error) {
-	var n int16
+func readString(r io.Reader) (String, error) {
+	var n Short
 	if err := read(r, &n); err != nil {
 		return "", err
 	}
@@ -60,11 +92,11 @@ func readString(r io.Reader) (string, error) {
 		return "", err
 	}
 
-	return string(b), nil
+	return String(b), nil
 }
 
-func readByteArray(r io.Reader) ([]int8, error) {
-	var n int32
+func readByteArray(r io.Reader) ([]Byte, error) {
+	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
 	}
@@ -73,7 +105,7 @@ func readByteArray(r io.Reader) ([]int8, error) {
 		return nil, ErrNegativeLength
 	}
 
-	a := make([]int8, n)
+	a := make(ByteArray, n)
 	if err := read(r, a); err != nil {
 		return nil, err
 	}
@@ -81,8 +113,8 @@ func readByteArray(r io.Reader) ([]int8, error) {
 	return a, nil
 }
 
-func readIntArray(r io.Reader) ([]int32, error) {
-	var n int32
+func readIntArray(r io.Reader) ([]Int, error) {
+	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
 	}
@@ -91,7 +123,7 @@ func readIntArray(r io.Reader) ([]int32, error) {
 		return nil, ErrNegativeLength
 	}
 
-	a := make([]int32, n)
+	a := make(IntArray, n)
 	if err := read(r, a); err != nil {
 		return nil, err
 	}
@@ -99,8 +131,8 @@ func readIntArray(r io.Reader) ([]int32, error) {
 	return a, nil
 }
 
-func readLongArray(r io.Reader) ([]int64, error) {
-	var n int32
+func readLongArray(r io.Reader) ([]Long, error) {
+	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
 	}
@@ -109,37 +141,21 @@ func readLongArray(r io.Reader) ([]int64, error) {
 		return nil, ErrNegativeLength
 	}
 
-	a := make([]int64, n)
+	a := make(LongArray, n)
 	if err := read(r, a); err != nil {
 		return nil, err
 	}
 
 	return a, nil
 }
-
-const (
-	idEnd byte = iota
-	idByte
-	idShort
-	idInt
-	idLong
-	idFloat
-	idDouble
-	idByteArray
-	idString
-	idList
-	idCompound
-	idIntArray
-	idLongArray
-)
 
 func readList(r io.Reader) (interface{}, error) {
-	var id byte
+	var id Byte
 	if err := read(r, &id); err != nil {
 		return nil, err
 	}
 
-	var n int32
+	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
 	}
@@ -153,45 +169,45 @@ func readList(r io.Reader) (interface{}, error) {
 		if n > 0 {
 			return nil, errors.New("list of end tags has nonzero length")
 		}
-		return []struct{}{}, nil
+		return []End{}, nil
 	case idByte:
-		a := make([]int8, n)
+		a := make([]Byte, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
 	case idShort:
-		a := make([]int16, n)
+		a := make([]Short, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
 	case idInt:
-		a := make([]int32, n)
+		a := make([]Int, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
 	case idLong:
-		a := make([]int64, n)
+		a := make([]Long, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
 	case idFloat:
-		a := make([]float32, n)
+		a := make([]Float, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
 	case idDouble:
-		a := make([]float64, n)
+		a := make([]Double, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
 	case idByteArray:
-		a := make([][]int8, n)
+		a := make([]ByteArray, n)
 		for i := range a {
 			v, err := readByteArray(r)
 			if err != nil {
@@ -201,7 +217,7 @@ func readList(r io.Reader) (interface{}, error) {
 		}
 		return a, nil
 	case idString:
-		a := make([]string, n)
+		a := make([]String, n)
 		for i := range a {
 			v, err := readString(r)
 			if err != nil {
@@ -211,7 +227,7 @@ func readList(r io.Reader) (interface{}, error) {
 		}
 		return a, nil
 	case idList:
-		a := make([]interface{}, n)
+		a := make([]List, n)
 		for i := range a {
 			v, err := readList(r)
 			if err != nil {
@@ -221,7 +237,7 @@ func readList(r io.Reader) (interface{}, error) {
 		}
 		return a, nil
 	case idCompound:
-		a := make([]map[string]interface{}, n)
+		a := make([]Compound, n)
 		for i := range a {
 			v, err := readCompound(r)
 			if err != nil {
@@ -231,7 +247,7 @@ func readList(r io.Reader) (interface{}, error) {
 		}
 		return a, nil
 	case idIntArray:
-		a := make([][]int32, n)
+		a := make([]IntArray, n)
 		for i := range a {
 			v, err := readIntArray(r)
 			if err != nil {
@@ -241,7 +257,7 @@ func readList(r io.Reader) (interface{}, error) {
 		}
 		return a, nil
 	case idLongArray:
-		a := make([][]int64, n)
+		a := make([]LongArray, n)
 		for i := range a {
 			v, err := readLongArray(r)
 			if err != nil {
@@ -255,11 +271,11 @@ func readList(r io.Reader) (interface{}, error) {
 	}
 }
 
-func readCompound(r io.Reader) (map[string]interface{}, error) {
-	m := make(map[string]interface{})
+func readCompound(r io.Reader) (Compound, error) {
+	m := make(Compound)
 
 	for {
-		var id byte
+		var id Byte
 		if err := read(r, &id); err != nil {
 			return nil, err
 		}
@@ -279,37 +295,37 @@ func readCompound(r io.Reader) (map[string]interface{}, error) {
 
 		switch id {
 		case idByte:
-			var v int8
+			var v Byte
 			if err := read(r, &v); err != nil {
 				return nil, err
 			}
 			m[name] = v
 		case idShort:
-			var v int16
+			var v Short
 			if err := read(r, &v); err != nil {
 				return nil, err
 			}
 			m[name] = v
 		case idInt:
-			var v int32
+			var v Int
 			if err := read(r, &v); err != nil {
 				return nil, err
 			}
 			m[name] = v
 		case idLong:
-			var v int64
+			var v Long
 			if err := read(r, &v); err != nil {
 				return nil, err
 			}
 			m[name] = v
 		case idFloat:
-			var v float32
+			var v Float
 			if err := read(r, &v); err != nil {
 				return nil, err
 			}
 			m[name] = v
 		case idDouble:
-			var v float64
+			var v Double
 			if err := read(r, &v); err != nil {
 				return nil, err
 			}
