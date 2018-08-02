@@ -45,36 +45,115 @@ type (
 	LongArray []Long
 )
 
-type NBT struct {
-	Name String
-	Tags Compound
-}
-
-func Decode(r io.Reader) (*NBT, error) {
-	var id Byte
-	if err := read(r, &id); err != nil {
-		return nil, err
-	}
-
-	if id != idCompound {
-		return nil, ErrInvalidRoot
-	}
-
-	name, err := readString(r)
-	if err != nil {
-		return nil, err
-	}
-
-	tags, err := readCompound(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &NBT{name, tags}, nil
-}
-
 func read(r io.Reader, v interface{}) error {
 	return binary.Read(r, binary.BigEndian, v)
+}
+
+func Decode(r io.Reader) (*NamedTag, error) {
+	return readNamedTag(r)
+}
+
+type NamedTag struct {
+	ID      Byte
+	Name    String
+	Payload interface{}
+}
+
+func readNamedTag(r io.Reader) (*NamedTag, error) {
+	tag := new(NamedTag)
+
+	err := read(r, &tag.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if tag.ID == idEnd {
+		return tag, nil
+	}
+
+	tag.Name, err = readString(r)
+	if err != nil {
+		return nil, err
+	}
+
+	switch tag.ID {
+	case idByte:
+		var v Byte
+		if err := read(r, &v); err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idShort:
+		var v Short
+		if err := read(r, &v); err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idInt:
+		var v Int
+		if err := read(r, &v); err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idLong:
+		var v Long
+		if err := read(r, &v); err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idFloat:
+		var v Float
+		if err := read(r, &v); err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idDouble:
+		var v Double
+		if err := read(r, &v); err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idByteArray:
+		v, err := readByteArray(r)
+		if err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idString:
+		v, err := readString(r)
+		if err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idList:
+		v, err := readList(r)
+		if err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idCompound:
+		v, err := readCompound(r)
+		if err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idIntArray:
+		v, err := readIntArray(r)
+		if err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	case idLongArray:
+		v, err := readLongArray(r)
+		if err != nil {
+			return nil, err
+		}
+		tag.Payload = v
+	default:
+		return nil, ErrUnknownTag
+	}
+
+	return tag, nil
 }
 
 func readString(r io.Reader) (String, error) {
@@ -275,100 +354,19 @@ func readCompound(r io.Reader) (Compound, error) {
 	m := make(Compound)
 
 	for {
-		var id Byte
-		if err := read(r, &id); err != nil {
-			return nil, err
-		}
-
-		if id == idEnd {
-			break
-		}
-
-		name, err := readString(r)
+		tag, err := readNamedTag(r)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, exists := m[name]; exists {
-			return nil, ErrDuplicateName
+		if tag.ID == idEnd {
+			break
 		}
 
-		switch id {
-		case idByte:
-			var v Byte
-			if err := read(r, &v); err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idShort:
-			var v Short
-			if err := read(r, &v); err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idInt:
-			var v Int
-			if err := read(r, &v); err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idLong:
-			var v Long
-			if err := read(r, &v); err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idFloat:
-			var v Float
-			if err := read(r, &v); err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idDouble:
-			var v Double
-			if err := read(r, &v); err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idByteArray:
-			v, err := readByteArray(r)
-			if err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idString:
-			v, err := readString(r)
-			if err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idList:
-			v, err := readList(r)
-			if err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idCompound:
-			v, err := readCompound(r)
-			if err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idIntArray:
-			v, err := readIntArray(r)
-			if err != nil {
-				return nil, err
-			}
-			m[name] = v
-		case idLongArray:
-			v, err := readLongArray(r)
-			if err != nil {
-				return nil, err
-			}
-			m[name] = v
-		default:
-			return nil, ErrUnknownTag
+		if _, exists := m[tag.Name]; exists {
+			return nil, ErrDuplicateName
 		}
+		m[tag.Name] = tag.Payload
 	}
 
 	return m, nil

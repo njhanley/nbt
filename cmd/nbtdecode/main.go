@@ -34,7 +34,7 @@ func isGZIP(f *os.File) (bool, error) {
 	return sig[0] == 0x1f && sig[1] == 0x8b, nil
 }
 
-func decodeFile(name string) (*nbt.NBT, error) {
+func decodeFile(name string) (*nbt.NamedTag, error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return nil, err
@@ -62,14 +62,14 @@ func decodeFile(name string) (*nbt.NBT, error) {
 	return nbt.Decode(r)
 }
 
-type formatter func(*nbt.NBT) error
+type formatter func(*nbt.NamedTag) error
 
-func goSyntaxFormat(tag *nbt.NBT) error {
+func goSyntaxFormat(tag *nbt.NamedTag) error {
 	fmt.Printf("%#v\n", tag)
 	return nil
 }
 
-func jsonFormat(tag *nbt.NBT) error {
+func jsonFormat(tag *nbt.NamedTag) error {
 	b, err := json.Marshal(tag)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func jsonFormat(tag *nbt.NBT) error {
 	return nil
 }
 
-func jsonIndentFormat(tag *nbt.NBT) error {
+func jsonIndentFormat(tag *nbt.NamedTag) error {
 	b, err := json.MarshalIndent(tag, "", "  ")
 	if err != nil {
 		return err
