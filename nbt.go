@@ -174,7 +174,7 @@ func readString(r io.Reader) (String, error) {
 	return String(b), nil
 }
 
-func readByteArray(r io.Reader) ([]Byte, error) {
+func readByteArray(r io.Reader) (ByteArray, error) {
 	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func readByteArray(r io.Reader) ([]Byte, error) {
 	return a, nil
 }
 
-func readIntArray(r io.Reader) ([]Int, error) {
+func readIntArray(r io.Reader) (IntArray, error) {
 	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func readIntArray(r io.Reader) ([]Int, error) {
 	return a, nil
 }
 
-func readLongArray(r io.Reader) ([]Long, error) {
+func readLongArray(r io.Reader) (LongArray, error) {
 	var n Int
 	if err := read(r, &n); err != nil {
 		return nil, err
