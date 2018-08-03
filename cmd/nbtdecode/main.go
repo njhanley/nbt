@@ -34,23 +34,23 @@ func isGZIP(f *os.File) (bool, error) {
 	return sig[0] == 0x1f && sig[1] == 0x8b, nil
 }
 
-func decodeFile(name string) (*nbt.NamedTag, error) {
+func decodeFile(name string) (nbt.NamedTag, error) {
 	file, err := os.Open(name)
 	if err != nil {
-		return nil, err
+		return nbt.NamedTag{}, err
 	}
 	defer file.Close()
 
 	gzipped, err := isGZIP(file)
 	if err != nil {
-		return nil, err
+		return nbt.NamedTag{}, err
 	}
 
 	var r io.Reader
 	if gzipped {
 		gz, err := gzip.NewReader(file)
 		if err != nil {
-			return nil, err
+			return nbt.NamedTag{}, err
 		}
 		defer gz.Close()
 
@@ -62,14 +62,14 @@ func decodeFile(name string) (*nbt.NamedTag, error) {
 	return nbt.Decode(r)
 }
 
-type formatter func(*nbt.NamedTag) error
+type formatter func(nbt.NamedTag) error
 
-func goSyntaxFormat(tag *nbt.NamedTag) error {
+func goSyntaxFormat(tag nbt.NamedTag) error {
 	fmt.Printf("%#v\n", tag)
 	return nil
 }
 
-func jsonFormat(tag *nbt.NamedTag) error {
+func jsonFormat(tag nbt.NamedTag) error {
 	b, err := json.Marshal(tag)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func jsonFormat(tag *nbt.NamedTag) error {
 	return nil
 }
 
-func jsonIndentFormat(tag *nbt.NamedTag) error {
+func jsonIndentFormat(tag nbt.NamedTag) error {
 	b, err := json.MarshalIndent(tag, "", "  ")
 	if err != nil {
 		return err

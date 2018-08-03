@@ -49,7 +49,7 @@ func read(r io.Reader, v interface{}) error {
 	return binary.Read(r, binary.BigEndian, v)
 }
 
-func Decode(r io.Reader) (*NamedTag, error) {
+func Decode(r io.Reader) (NamedTag, error) {
 	return readNamedTag(r)
 }
 
@@ -59,12 +59,12 @@ type NamedTag struct {
 	Payload interface{}
 }
 
-func readNamedTag(r io.Reader) (*NamedTag, error) {
-	tag := new(NamedTag)
+func readNamedTag(r io.Reader) (NamedTag, error) {
+	var tag NamedTag
 
 	err := read(r, &tag.ID)
 	if err != nil {
-		return nil, err
+		return tag, err
 	}
 
 	if tag.ID == idEnd {
@@ -73,84 +73,84 @@ func readNamedTag(r io.Reader) (*NamedTag, error) {
 
 	tag.Name, err = readString(r)
 	if err != nil {
-		return nil, err
+		return tag, err
 	}
 
 	switch tag.ID {
 	case idByte:
 		var v Byte
 		if err := read(r, &v); err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idShort:
 		var v Short
 		if err := read(r, &v); err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idInt:
 		var v Int
 		if err := read(r, &v); err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idLong:
 		var v Long
 		if err := read(r, &v); err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idFloat:
 		var v Float
 		if err := read(r, &v); err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idDouble:
 		var v Double
 		if err := read(r, &v); err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idByteArray:
 		v, err := readByteArray(r)
 		if err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idString:
 		v, err := readString(r)
 		if err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idList:
 		v, err := readList(r)
 		if err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idCompound:
 		v, err := readCompound(r)
 		if err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idIntArray:
 		v, err := readIntArray(r)
 		if err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	case idLongArray:
 		v, err := readLongArray(r)
 		if err != nil {
-			return nil, err
+			return tag, err
 		}
 		tag.Payload = v
 	default:
-		return nil, ErrUnknownTag
+		return tag, ErrUnknownTag
 	}
 
 	return tag, nil
