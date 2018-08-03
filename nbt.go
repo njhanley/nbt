@@ -70,7 +70,7 @@ type (
 		ElementType TagType
 		Payload     interface{}
 	}
-	Compound  map[String]interface{}
+	Compound  map[String]NamedTag
 	IntArray  []Int
 	LongArray []Long
 )
@@ -398,7 +398,7 @@ func readCompound(r io.Reader) (Compound, error) {
 		if _, exists := m[tag.Name]; exists {
 			return nil, ErrDuplicateName
 		}
-		m[tag.Name] = tag.Payload
+		m[tag.Name] = tag
 	}
 
 	return m, nil
