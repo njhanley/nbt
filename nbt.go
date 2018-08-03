@@ -13,21 +13,43 @@ var (
 	ErrDuplicateName  = errors.New("duplicate name in compound")
 )
 
+type TagType byte
+
 const (
-	idEnd Byte = iota
-	idByte
-	idShort
-	idInt
-	idLong
-	idFloat
-	idDouble
-	idByteArray
-	idString
-	idList
-	idCompound
-	idIntArray
-	idLongArray
+	TypeEnd TagType = iota
+	TypeByte
+	TypeShort
+	TypeInt
+	TypeLong
+	TypeFloat
+	TypeDouble
+	TypeByteArray
+	TypeString
+	TypeList
+	TypeCompound
+	TypeIntArray
+	TypeLongArray
 )
+
+var tagTypeName = []string{
+	TypeEnd:       "End",
+	TypeByte:      "Byte",
+	TypeShort:     "Short",
+	TypeInt:       "Int",
+	TypeLong:      "Long",
+	TypeFloat:     "Float",
+	TypeDouble:    "Double",
+	TypeByteArray: "ByteArray",
+	TypeString:    "String",
+	TypeList:      "List",
+	TypeCompound:  "Compound",
+	TypeIntArray:  "IntArray",
+	TypeLongArray: "LongArray",
+}
+
+func (typ TagType) String() string {
+	return tagTypeName[typ]
+}
 
 type (
 	End       struct{}
@@ -54,7 +76,7 @@ func Decode(r io.Reader) (NamedTag, error) {
 }
 
 type NamedTag struct {
-	ID      Byte
+	Type    TagType
 	Name    String
 	Payload interface{}
 }
@@ -62,12 +84,12 @@ type NamedTag struct {
 func readNamedTag(r io.Reader) (NamedTag, error) {
 	var tag NamedTag
 
-	err := read(r, &tag.ID)
+	err := read(r, &tag.Type)
 	if err != nil {
 		return tag, err
 	}
 
-	if tag.ID == idEnd {
+	if tag.Type == TypeEnd {
 		return tag, nil
 	}
 
@@ -76,74 +98,74 @@ func readNamedTag(r io.Reader) (NamedTag, error) {
 		return tag, err
 	}
 
-	switch tag.ID {
-	case idByte:
+	switch tag.Type {
+	case TypeByte:
 		var v Byte
 		if err := read(r, &v); err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idShort:
+	case TypeShort:
 		var v Short
 		if err := read(r, &v); err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idInt:
+	case TypeInt:
 		var v Int
 		if err := read(r, &v); err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idLong:
+	case TypeLong:
 		var v Long
 		if err := read(r, &v); err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idFloat:
+	case TypeFloat:
 		var v Float
 		if err := read(r, &v); err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idDouble:
+	case TypeDouble:
 		var v Double
 		if err := read(r, &v); err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idByteArray:
+	case TypeByteArray:
 		v, err := readByteArray(r)
 		if err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idString:
+	case TypeString:
 		v, err := readString(r)
 		if err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idList:
+	case TypeList:
 		v, err := readList(r)
 		if err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idCompound:
+	case TypeCompound:
 		v, err := readCompound(r)
 		if err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idIntArray:
+	case TypeIntArray:
 		v, err := readIntArray(r)
 		if err != nil {
 			return tag, err
 		}
 		tag.Payload = v
-	case idLongArray:
+	case TypeLongArray:
 		v, err := readLongArray(r)
 		if err != nil {
 			return tag, err
@@ -229,8 +251,8 @@ func readLongArray(r io.Reader) (LongArray, error) {
 }
 
 func readList(r io.Reader) (interface{}, error) {
-	var id Byte
-	if err := read(r, &id); err != nil {
+	var typ TagType
+	if err := read(r, &typ); err != nil {
 		return nil, err
 	}
 
@@ -243,49 +265,49 @@ func readList(r io.Reader) (interface{}, error) {
 		return nil, ErrNegativeLength
 	}
 
-	switch id {
-	case idEnd:
+	switch typ {
+	case TypeEnd:
 		if n > 0 {
 			return nil, errors.New("list of end tags has nonzero length")
 		}
 		return []End{}, nil
-	case idByte:
+	case TypeByte:
 		a := make([]Byte, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
-	case idShort:
+	case TypeShort:
 		a := make([]Short, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
-	case idInt:
+	case TypeInt:
 		a := make([]Int, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
-	case idLong:
+	case TypeLong:
 		a := make([]Long, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
-	case idFloat:
+	case TypeFloat:
 		a := make([]Float, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
-	case idDouble:
+	case TypeDouble:
 		a := make([]Double, n)
 		if err := read(r, a); err != nil {
 			return nil, err
 		}
 		return a, nil
-	case idByteArray:
+	case TypeByteArray:
 		a := make([]ByteArray, n)
 		for i := range a {
 			v, err := readByteArray(r)
@@ -295,7 +317,7 @@ func readList(r io.Reader) (interface{}, error) {
 			a[i] = v
 		}
 		return a, nil
-	case idString:
+	case TypeString:
 		a := make([]String, n)
 		for i := range a {
 			v, err := readString(r)
@@ -305,7 +327,7 @@ func readList(r io.Reader) (interface{}, error) {
 			a[i] = v
 		}
 		return a, nil
-	case idList:
+	case TypeList:
 		a := make([]List, n)
 		for i := range a {
 			v, err := readList(r)
@@ -315,7 +337,7 @@ func readList(r io.Reader) (interface{}, error) {
 			a[i] = v
 		}
 		return a, nil
-	case idCompound:
+	case TypeCompound:
 		a := make([]Compound, n)
 		for i := range a {
 			v, err := readCompound(r)
@@ -325,7 +347,7 @@ func readList(r io.Reader) (interface{}, error) {
 			a[i] = v
 		}
 		return a, nil
-	case idIntArray:
+	case TypeIntArray:
 		a := make([]IntArray, n)
 		for i := range a {
 			v, err := readIntArray(r)
@@ -335,7 +357,7 @@ func readList(r io.Reader) (interface{}, error) {
 			a[i] = v
 		}
 		return a, nil
-	case idLongArray:
+	case TypeLongArray:
 		a := make([]LongArray, n)
 		for i := range a {
 			v, err := readLongArray(r)
@@ -359,7 +381,7 @@ func readCompound(r io.Reader) (Compound, error) {
 			return nil, err
 		}
 
-		if tag.ID == idEnd {
+		if tag.Type == TypeEnd {
 			break
 		}
 
