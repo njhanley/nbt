@@ -61,7 +61,10 @@ type (
 	Double    float64
 	ByteArray []Byte
 	String    string
-	List      interface{}
+	List      struct {
+		ElementType TagType
+		Payload     interface{}
+	}
 	Compound  map[String]interface{}
 	IntArray  []Int
 	LongArray []Long
@@ -250,126 +253,128 @@ func readLongArray(r io.Reader) (LongArray, error) {
 	return a, nil
 }
 
-func readList(r io.Reader) (interface{}, error) {
-	var typ TagType
-	if err := read(r, &typ); err != nil {
-		return nil, err
+func readList(r io.Reader) (List, error) {
+	var list List
+
+	if err := read(r, &list.ElementType); err != nil {
+		return list, err
 	}
 
 	var n Int
 	if err := read(r, &n); err != nil {
-		return nil, err
+		return list, err
 	}
 
 	if n < 0 {
-		return nil, ErrNegativeLength
+		return list, ErrNegativeLength
 	}
 
-	switch typ {
+	switch list.ElementType {
 	case TypeEnd:
 		if n > 0 {
-			return nil, errors.New("list of end tags has nonzero length")
+			return list, errors.New("list of end tags has nonzero length")
 		}
-		return []End{}, nil
 	case TypeByte:
 		a := make([]Byte, n)
 		if err := read(r, a); err != nil {
-			return nil, err
+			return list, err
 		}
-		return a, nil
+		list.Payload = a
 	case TypeShort:
 		a := make([]Short, n)
 		if err := read(r, a); err != nil {
-			return nil, err
+			return list, err
 		}
-		return a, nil
+		list.Payload = a
 	case TypeInt:
 		a := make([]Int, n)
 		if err := read(r, a); err != nil {
-			return nil, err
+			return list, err
 		}
-		return a, nil
+		list.Payload = a
 	case TypeLong:
 		a := make([]Long, n)
 		if err := read(r, a); err != nil {
-			return nil, err
+			return list, err
 		}
-		return a, nil
+		list.Payload = a
 	case TypeFloat:
 		a := make([]Float, n)
 		if err := read(r, a); err != nil {
-			return nil, err
+			return list, err
 		}
-		return a, nil
+		list.Payload = a
 	case TypeDouble:
 		a := make([]Double, n)
 		if err := read(r, a); err != nil {
-			return nil, err
+			return list, err
 		}
-		return a, nil
+		list.Payload = a
 	case TypeByteArray:
 		a := make([]ByteArray, n)
 		for i := range a {
 			v, err := readByteArray(r)
 			if err != nil {
-				return nil, err
+				return list, err
 			}
 			a[i] = v
 		}
-		return a, nil
+		list.Payload = a
 	case TypeString:
 		a := make([]String, n)
 		for i := range a {
 			v, err := readString(r)
 			if err != nil {
-				return nil, err
+				return list, err
 			}
 			a[i] = v
 		}
-		return a, nil
+		list.Payload = a
 	case TypeList:
 		a := make([]List, n)
 		for i := range a {
 			v, err := readList(r)
 			if err != nil {
-				return nil, err
+				return list, err
 			}
 			a[i] = v
 		}
-		return a, nil
+		list.Payload = a
 	case TypeCompound:
 		a := make([]Compound, n)
 		for i := range a {
 			v, err := readCompound(r)
 			if err != nil {
-				return nil, err
+				return list, err
 			}
 			a[i] = v
 		}
-		return a, nil
+		list.Payload = a
 	case TypeIntArray:
 		a := make([]IntArray, n)
 		for i := range a {
 			v, err := readIntArray(r)
 			if err != nil {
-				return nil, err
+				return list, err
 			}
 			a[i] = v
 		}
-		return a, nil
+		list.Payload = a
 	case TypeLongArray:
 		a := make([]LongArray, n)
 		for i := range a {
 			v, err := readLongArray(r)
 			if err != nil {
-				return nil, err
+				return list, err
 			}
 			a[i] = v
 		}
-		return a, nil
+		list.Payload = a
 	default:
-		return nil, ErrUnknownTag
+		return list, ErrUnknownTag
 	}
+
+	return list, nil
 }
 
 func readCompound(r io.Reader) (Compound, error) {
