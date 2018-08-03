@@ -57,7 +57,6 @@ func (typ TagType) MarshalJSON() ([]byte, error) {
 }
 
 type (
-	End       struct{}
 	Byte      int8
 	Short     int16
 	Int       int32
