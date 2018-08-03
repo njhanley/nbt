@@ -2,6 +2,7 @@ package nbt
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"io"
 )
@@ -49,6 +50,10 @@ var tagTypeName = []string{
 
 func (typ TagType) String() string {
 	return tagTypeName[typ]
+}
+
+func (typ TagType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(typ.String())
 }
 
 type (
