@@ -75,6 +75,14 @@ type (
 	LongArray []Long
 )
 
+func (m Compound) MarshalJSON() ([]byte, error) {
+	a := make([]NamedTag, 0, len(m))
+	for _, tag := range m {
+		a = append(a, tag)
+	}
+	return json.Marshal(a)
+}
+
 func read(r io.Reader, v interface{}) error {
 	return binary.Read(r, binary.BigEndian, v)
 }
