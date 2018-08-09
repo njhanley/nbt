@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 )
 
 var (
@@ -87,6 +88,7 @@ func (m Compound) MarshalJSON() ([]byte, error) {
 	for _, tag := range m {
 		a = append(a, tag)
 	}
+	sort.Slice(a, func(i, j int) bool { return a[i].Name < a[j].Name })
 	return json.Marshal(a)
 }
 
