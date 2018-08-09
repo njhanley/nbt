@@ -9,13 +9,6 @@ import (
 	"sort"
 )
 
-var (
-	ErrNegativeLength = errors.New("length is negative")
-	ErrUnknownTag     = errors.New("unknown tag ID")
-	ErrInvalidRoot    = errors.New("root tag is not compound")
-	ErrDuplicateName  = errors.New("duplicate name in compound")
-)
-
 type TagType byte
 
 const (
@@ -58,39 +51,12 @@ func (typ TagType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(typ.String())
 }
 
-type (
-	Byte      int8
-	Short     int16
-	Int       int32
-	Long      int64
-	Float     float32
-	Double    float64
-	ByteArray []Byte
-	String    string
-	List      struct {
-		ElementType TagType
-		Payload     interface{}
-	}
-	Compound  map[String]NamedTag
-	IntArray  []Int
-	LongArray []Long
-)
-
 const (
 	maxByte  = 1<<7 - 1
 	maxShort = 1<<15 - 1
 	maxInt   = 1<<31 - 1
 	maxLong  = 1<<63 - 1
 )
-
-func (m Compound) MarshalJSON() ([]byte, error) {
-	a := make([]NamedTag, 0, len(m))
-	for _, tag := range m {
-		a = append(a, tag)
-	}
-	sort.Slice(a, func(i, j int) bool { return a[i].Name < a[j].Name })
-	return json.Marshal(a)
-}
 
 func read(r io.Reader, v interface{}) error {
 	return binary.Read(r, binary.BigEndian, v)
@@ -100,196 +66,26 @@ func write(w io.Writer, v interface{}) error {
 	return binary.Write(w, binary.BigEndian, v)
 }
 
-func Decode(r io.Reader) (NamedTag, error) {
-	return readNamedTag(r)
-}
+var (
+	ErrNegativeLength = errors.New("length is negative")
+	ErrUnknownTag     = errors.New("unknown tag ID")
+	ErrInvalidRoot    = errors.New("root tag is not compound")
+	ErrDuplicateName  = errors.New("duplicate name in compound")
+)
 
-func Encode(w io.Writer, tag NamedTag) error {
-	return writeNamedTag(w, tag)
-}
+type Byte int8
 
-type NamedTag struct {
-	Type    TagType
-	Name    String
-	Payload interface{}
-}
+type Short int16
 
-func readNamedTag(r io.Reader) (NamedTag, error) {
-	var tag NamedTag
+type Int int32
 
-	err := read(r, &tag.Type)
-	if err != nil {
-		return tag, err
-	}
+type Long int64
 
-	if tag.Type == TypeEnd {
-		return tag, nil
-	}
+type Float float32
 
-	tag.Name, err = readString(r)
-	if err != nil {
-		return tag, err
-	}
+type Double float64
 
-	switch tag.Type {
-	case TypeByte:
-		var v Byte
-		if err := read(r, &v); err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeShort:
-		var v Short
-		if err := read(r, &v); err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeInt:
-		var v Int
-		if err := read(r, &v); err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeLong:
-		var v Long
-		if err := read(r, &v); err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeFloat:
-		var v Float
-		if err := read(r, &v); err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeDouble:
-		var v Double
-		if err := read(r, &v); err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeByteArray:
-		v, err := readByteArray(r)
-		if err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeString:
-		v, err := readString(r)
-		if err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeList:
-		v, err := readList(r)
-		if err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeCompound:
-		v, err := readCompound(r)
-		if err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeIntArray:
-		v, err := readIntArray(r)
-		if err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	case TypeLongArray:
-		v, err := readLongArray(r)
-		if err != nil {
-			return tag, err
-		}
-		tag.Payload = v
-	default:
-		return tag, ErrUnknownTag
-	}
-
-	return tag, nil
-}
-
-func writeNamedTag(w io.Writer, tag NamedTag) error {
-	if err := write(w, tag.Type); err != nil {
-		return err
-	}
-
-	if tag.Type == TypeEnd {
-		return nil
-	}
-
-	if err := writeString(w, tag.Name); err != nil {
-		return err
-	}
-
-	switch tag.Type {
-	case TypeByte, TypeShort, TypeInt, TypeLong, TypeFloat, TypeDouble:
-		if err := write(w, tag.Payload); err != nil {
-			return err
-		}
-	case TypeByteArray:
-		if err := writeByteArray(w, tag.Payload.(ByteArray)); err != nil {
-			return err
-		}
-	case TypeString:
-		if err := writeString(w, tag.Payload.(String)); err != nil {
-			return err
-		}
-	case TypeList:
-		if err := writeList(w, tag.Payload.(List)); err != nil {
-			return err
-		}
-	case TypeCompound:
-		if err := writeCompound(w, tag.Payload.(Compound)); err != nil {
-			return err
-		}
-	case TypeIntArray:
-		if err := writeIntArray(w, tag.Payload.(IntArray)); err != nil {
-			return err
-		}
-	case TypeLongArray:
-		if err := writeLongArray(w, tag.Payload.(LongArray)); err != nil {
-			return err
-		}
-	default:
-		return ErrUnknownTag
-	}
-
-	return nil
-}
-
-func readString(r io.Reader) (String, error) {
-	var n Short
-	if err := read(r, &n); err != nil {
-		return "", err
-	}
-
-	if n < 0 {
-		return "", ErrNegativeLength
-	}
-
-	b := make([]byte, n)
-	if err := read(r, b); err != nil {
-		return "", err
-	}
-
-	return String(b), nil
-}
-
-func writeString(w io.Writer, s String) error {
-	n := len(s)
-	if n > maxShort {
-		return fmt.Errorf("string length (%d) > maxShort (%d)", n, maxShort)
-	}
-
-	if err := write(w, Short(n)); err != nil {
-		return err
-	}
-
-	return write(w, []byte(s))
-}
+type ByteArray []Byte
 
 func readByteArray(r io.Reader) (ByteArray, error) {
 	var n Int
@@ -322,66 +118,42 @@ func writeByteArray(w io.Writer, a ByteArray) error {
 	return write(w, a)
 }
 
-func readIntArray(r io.Reader) (IntArray, error) {
-	var n Int
+type String string
+
+func readString(r io.Reader) (String, error) {
+	var n Short
 	if err := read(r, &n); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if n < 0 {
-		return nil, ErrNegativeLength
+		return "", ErrNegativeLength
 	}
 
-	a := make(IntArray, n)
-	if err := read(r, a); err != nil {
-		return nil, err
+	b := make([]byte, n)
+	if err := read(r, b); err != nil {
+		return "", err
 	}
 
-	return a, nil
+	return String(b), nil
 }
 
-func writeIntArray(w io.Writer, a IntArray) error {
-	n := len(a)
-	if n > maxInt {
-		return fmt.Errorf("intArray length (%d) > maxInt (%d)", n, maxInt)
+func writeString(w io.Writer, s String) error {
+	n := len(s)
+	if n > maxShort {
+		return fmt.Errorf("string length (%d) > maxShort (%d)", n, maxShort)
 	}
 
-	if err := write(w, Int(n)); err != nil {
+	if err := write(w, Short(n)); err != nil {
 		return err
 	}
 
-	return write(w, a)
+	return write(w, []byte(s))
 }
 
-func readLongArray(r io.Reader) (LongArray, error) {
-	var n Int
-	if err := read(r, &n); err != nil {
-		return nil, err
-	}
-
-	if n < 0 {
-		return nil, ErrNegativeLength
-	}
-
-	a := make(LongArray, n)
-	if err := read(r, a); err != nil {
-		return nil, err
-	}
-
-	return a, nil
-}
-
-func writeLongArray(w io.Writer, a LongArray) error {
-	n := len(a)
-	if n > maxInt {
-		return fmt.Errorf("longArray length (%d) > maxInt (%d)", n, maxInt)
-	}
-
-	if err := write(w, Int(n)); err != nil {
-		return err
-	}
-
-	return write(w, a)
+type List struct {
+	ElementType TagType
+	Payload     interface{}
 }
 
 func readList(r io.Reader) (List, error) {
@@ -721,6 +493,17 @@ func writeList(w io.Writer, list List) error {
 	return nil
 }
 
+type Compound map[String]NamedTag
+
+func (m Compound) MarshalJSON() ([]byte, error) {
+	a := make([]NamedTag, 0, len(m))
+	for _, tag := range m {
+		a = append(a, tag)
+	}
+	sort.Slice(a, func(i, j int) bool { return a[i].Name < a[j].Name })
+	return json.Marshal(a)
+}
+
 func readCompound(r io.Reader) (Compound, error) {
 	m := make(Compound)
 
@@ -751,4 +534,230 @@ func writeCompound(w io.Writer, m Compound) error {
 	}
 
 	return write(w, TypeEnd)
+}
+
+type IntArray []Int
+
+func readIntArray(r io.Reader) (IntArray, error) {
+	var n Int
+	if err := read(r, &n); err != nil {
+		return nil, err
+	}
+
+	if n < 0 {
+		return nil, ErrNegativeLength
+	}
+
+	a := make(IntArray, n)
+	if err := read(r, a); err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func writeIntArray(w io.Writer, a IntArray) error {
+	n := len(a)
+	if n > maxInt {
+		return fmt.Errorf("intArray length (%d) > maxInt (%d)", n, maxInt)
+	}
+
+	if err := write(w, Int(n)); err != nil {
+		return err
+	}
+
+	return write(w, a)
+}
+
+type LongArray []Long
+
+func readLongArray(r io.Reader) (LongArray, error) {
+	var n Int
+	if err := read(r, &n); err != nil {
+		return nil, err
+	}
+
+	if n < 0 {
+		return nil, ErrNegativeLength
+	}
+
+	a := make(LongArray, n)
+	if err := read(r, a); err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+func writeLongArray(w io.Writer, a LongArray) error {
+	n := len(a)
+	if n > maxInt {
+		return fmt.Errorf("longArray length (%d) > maxInt (%d)", n, maxInt)
+	}
+
+	if err := write(w, Int(n)); err != nil {
+		return err
+	}
+
+	return write(w, a)
+}
+
+type NamedTag struct {
+	Type    TagType
+	Name    String
+	Payload interface{}
+}
+
+func readNamedTag(r io.Reader) (NamedTag, error) {
+	var tag NamedTag
+
+	err := read(r, &tag.Type)
+	if err != nil {
+		return tag, err
+	}
+
+	if tag.Type == TypeEnd {
+		return tag, nil
+	}
+
+	tag.Name, err = readString(r)
+	if err != nil {
+		return tag, err
+	}
+
+	switch tag.Type {
+	case TypeByte:
+		var v Byte
+		if err := read(r, &v); err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeShort:
+		var v Short
+		if err := read(r, &v); err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeInt:
+		var v Int
+		if err := read(r, &v); err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeLong:
+		var v Long
+		if err := read(r, &v); err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeFloat:
+		var v Float
+		if err := read(r, &v); err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeDouble:
+		var v Double
+		if err := read(r, &v); err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeByteArray:
+		v, err := readByteArray(r)
+		if err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeString:
+		v, err := readString(r)
+		if err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeList:
+		v, err := readList(r)
+		if err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeCompound:
+		v, err := readCompound(r)
+		if err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeIntArray:
+		v, err := readIntArray(r)
+		if err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	case TypeLongArray:
+		v, err := readLongArray(r)
+		if err != nil {
+			return tag, err
+		}
+		tag.Payload = v
+	default:
+		return tag, ErrUnknownTag
+	}
+
+	return tag, nil
+}
+
+func Decode(r io.Reader) (NamedTag, error) {
+	return readNamedTag(r)
+}
+
+func writeNamedTag(w io.Writer, tag NamedTag) error {
+	if err := write(w, tag.Type); err != nil {
+		return err
+	}
+
+	if tag.Type == TypeEnd {
+		return nil
+	}
+
+	if err := writeString(w, tag.Name); err != nil {
+		return err
+	}
+
+	switch tag.Type {
+	case TypeByte, TypeShort, TypeInt, TypeLong, TypeFloat, TypeDouble:
+		if err := write(w, tag.Payload); err != nil {
+			return err
+		}
+	case TypeByteArray:
+		if err := writeByteArray(w, tag.Payload.(ByteArray)); err != nil {
+			return err
+		}
+	case TypeString:
+		if err := writeString(w, tag.Payload.(String)); err != nil {
+			return err
+		}
+	case TypeList:
+		if err := writeList(w, tag.Payload.(List)); err != nil {
+			return err
+		}
+	case TypeCompound:
+		if err := writeCompound(w, tag.Payload.(Compound)); err != nil {
+			return err
+		}
+	case TypeIntArray:
+		if err := writeIntArray(w, tag.Payload.(IntArray)); err != nil {
+			return err
+		}
+	case TypeLongArray:
+		if err := writeLongArray(w, tag.Payload.(LongArray)); err != nil {
+			return err
+		}
+	default:
+		return ErrUnknownTag
+	}
+
+	return nil
+}
+
+func Encode(w io.Writer, tag NamedTag) error {
+	return writeNamedTag(w, tag)
 }
