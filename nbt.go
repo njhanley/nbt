@@ -495,13 +495,19 @@ func writeList(w io.Writer, list List) error {
 
 type Compound map[String]NamedTag
 
-func (m Compound) MarshalJSON() ([]byte, error) {
-	a := make([]NamedTag, 0, len(m))
+func (m Compound) slice() []NamedTag {
+	a := make([]NamedTag, len(m))
+	var i int
 	for _, tag := range m {
-		a = append(a, tag)
+		a[i] = tag
+		i++
 	}
 	sort.Slice(a, func(i, j int) bool { return a[i].Name < a[j].Name })
-	return json.Marshal(a)
+	return a
+}
+
+func (m Compound) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.slice())
 }
 
 func readCompound(r io.Reader) (Compound, error) {
@@ -527,7 +533,7 @@ func readCompound(r io.Reader) (Compound, error) {
 }
 
 func writeCompound(w io.Writer, m Compound) error {
-	for _, tag := range m {
+	for _, tag := range m.slice() {
 		if err := writeNamedTag(w, tag); err != nil {
 			return err
 		}
