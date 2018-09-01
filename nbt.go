@@ -28,19 +28,19 @@ const (
 )
 
 var tagTypeName = []string{
-	TypeEnd:       "End",
-	TypeByte:      "Byte",
-	TypeShort:     "Short",
-	TypeInt:       "Int",
-	TypeLong:      "Long",
-	TypeFloat:     "Float",
-	TypeDouble:    "Double",
-	TypeByteArray: "ByteArray",
-	TypeString:    "String",
-	TypeList:      "List",
-	TypeCompound:  "Compound",
-	TypeIntArray:  "IntArray",
-	TypeLongArray: "LongArray",
+	TypeEnd:       "end",
+	TypeByte:      "byte",
+	TypeShort:     "short",
+	TypeInt:       "int",
+	TypeLong:      "long",
+	TypeFloat:     "float",
+	TypeDouble:    "double",
+	TypeByteArray: "byteArray",
+	TypeString:    "string",
+	TypeList:      "list",
+	TypeCompound:  "compound",
+	TypeIntArray:  "intArray",
+	TypeLongArray: "longArray",
 }
 
 func (typ TagType) String() string {
