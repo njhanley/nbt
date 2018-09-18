@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"compress/gzip"
+	gz "compress/gzip"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -43,8 +43,18 @@ func encode(data []byte) ([]byte, error) {
 	return buf.Bytes(), errors.WithStack(err)
 }
 
+func gzip(data []byte) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	w := gz.NewWriter(buf)
+	if _, err := w.Write(data); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	err := w.Close()
+	return buf.Bytes(), errors.WithStack(err)
+}
+
 func gunzip(data []byte) ([]byte, error) {
-	r, err := gzip.NewReader(bytes.NewReader(data))
+	r, err := gz.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -55,6 +65,7 @@ func gunzip(data []byte) ([]byte, error) {
 }
 
 func main() {
+	compress := flag.Bool("z", false, "use gzip compression")
 	flag.Parse()
 
 	if n := flag.NArg(); n < 2 {
@@ -73,19 +84,19 @@ func main() {
 		}
 
 		if b, err := gunzip(data); err != nil {
-			if errors.Cause(err) != gzip.ErrHeader {
+			if *compress || errors.Cause(err) != gz.ErrHeader {
 				fatal(errfmt, filename, err)
 			}
 		} else {
 			data = b
 		}
 
-		text, err := decode(data)
+		out, err := decode(data)
 		if err != nil {
 			fatal(errfmt, filename, err)
 		}
 
-		if _, err := os.Stdout.Write(append(text, "\n"...)); err != nil {
+		if _, err := os.Stdout.Write(append(out, "\n"...)); err != nil {
 			fatal(errfmt, filename, err)
 		}
 	case "encode", "enc", "e":
@@ -96,12 +107,19 @@ func main() {
 			fatal(errfmt, filename, err)
 		}
 
-		nbt, err := encode(data)
+		out, err := encode(data)
 		if err != nil {
 			fatal(errfmt, filename, err)
 		}
 
-		if _, err := os.Stdout.Write(nbt); err != nil {
+		if *compress {
+			out, err = gzip(out)
+			if err != nil {
+				fatal(errfmt, filename, err)
+			}
+		}
+
+		if _, err := os.Stdout.Write(out); err != nil {
 			fatal(errfmt, filename, err)
 		}
 	default:
