@@ -83,12 +83,18 @@ func main() {
 			fatal(errfmt, filename, err)
 		}
 
+		// try decompressing input
 		if b, err := gunzip(data); err != nil {
+			// if -z flag was set, fail if the input is not gzip compressed
 			if *compress || errors.Cause(err) != gz.ErrHeader {
 				fatal(errfmt, filename, err)
 			}
 		} else {
 			data = b
+			// if implicitly decompressing, announce it
+			if !*compress {
+				log("file %q was gzip compressed\n", filename)
+			}
 		}
 
 		out, err := decode(data)
