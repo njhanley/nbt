@@ -55,8 +55,8 @@ var (
 	typeIDs map[string]Type
 )
 
-// create map from type names to IDs
 func init() {
+	// create map from type names to IDs
 	typeIDs = make(map[string]Type, len(typeNames))
 	for id, name := range typeNames {
 		typeIDs[name] = Type(id)
