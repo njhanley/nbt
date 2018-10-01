@@ -339,19 +339,30 @@ const (
 	MaxLong  = 1<<63 - 1
 )
 
+// itoq converts an integer to a quoted string. This package marshals numbers
+// as strings to avoid lose of precision when using some JSON implementations.
+func itoq(n int64) string {
+	return strconv.Quote(strconv.FormatInt(n, 10))
+}
+
+// qtoi converts a quoted string to an integer.
+func qtoi(q string, bitSize int) (int64, error) {
+	s, err := strconv.Unquote(q)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(s, 10, bitSize)
+}
+
 type Byte int8
 
 func (n Byte) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(strconv.FormatInt(int64(n), 10))), nil
+	return []byte(itoq(int64(n))), nil
 }
 
 func (n *Byte) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-	_n, err := strconv.ParseInt(s, 10, 8)
-	*n = Byte(_n)
+	m, err := qtoi(string(data), 8)
+	*n = Byte(m)
 	return err
 }
 
@@ -368,16 +379,12 @@ func writeByte(w io.Writer, n Byte) error {
 type Short int16
 
 func (n Short) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(strconv.FormatInt(int64(n), 10))), nil
+	return []byte(itoq(int64(n))), nil
 }
 
 func (n *Short) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-	_n, err := strconv.ParseInt(s, 10, 16)
-	*n = Short(_n)
+	m, err := qtoi(string(data), 16)
+	*n = Short(m)
 	return err
 }
 
@@ -394,16 +401,12 @@ func writeShort(w io.Writer, n Short) error {
 type Int int32
 
 func (n Int) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(strconv.FormatInt(int64(n), 10))), nil
+	return []byte(itoq(int64(n))), nil
 }
 
 func (n *Int) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-	_n, err := strconv.ParseInt(s, 10, 32)
-	*n = Int(_n)
+	m, err := qtoi(string(data), 32)
+	*n = Int(m)
 	return err
 }
 
@@ -420,16 +423,12 @@ func writeInt(w io.Writer, n Int) error {
 type Long int64
 
 func (n Long) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(strconv.FormatInt(int64(n), 10))), nil
+	return []byte(itoq(int64(n))), nil
 }
 
 func (n *Long) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-	_n, err := strconv.ParseInt(s, 10, 64)
-	*n = Long(_n)
+	m, err := qtoi(string(data), 64)
+	*n = Long(m)
 	return err
 }
 
@@ -443,19 +442,30 @@ func writeLong(w io.Writer, n Long) error {
 	return write(w, n)
 }
 
+// ftoq converts a float to a quoted string. This package marshals numbers
+// as strings to avoid lose of precision when using some JSON implementations.
+func ftoq(f float64, bitSize int) string {
+	return strconv.Quote(strconv.FormatFloat(f, 'g', -1, bitSize))
+}
+
+// qtof converts a quoted string to a float.
+func qtof(q string, bitSize int) (float64, error) {
+	s, err := strconv.Unquote(q)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseFloat(s, bitSize)
+}
+
 type Float float32
 
 func (f Float) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(strconv.FormatFloat(float64(f), 'g', -1, 32))), nil
+	return []byte(ftoq(float64(f), 32)), nil
 }
 
 func (f *Float) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-	_f, err := strconv.ParseFloat(s, 32)
-	*f = Float(_f)
+	x, err := qtof(string(data), 32)
+	*f = Float(x)
 	return err
 }
 
@@ -472,16 +482,12 @@ func writeFloat(w io.Writer, f Float) error {
 type Double float64
 
 func (f Double) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Quote(strconv.FormatFloat(float64(f), 'g', -1, 64))), nil
+	return []byte(ftoq(float64(f), 64)), nil
 }
 
 func (f *Double) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
-		return err
-	}
-	_f, err := strconv.ParseFloat(s, 64)
-	*f = Double(_f)
+	x, err := qtof(string(data), 64)
+	*f = Double(x)
 	return err
 }
 
