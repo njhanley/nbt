@@ -84,13 +84,16 @@ func main() {
 		}
 
 		// try decompressing input
-		// if -z flag was set, fail if the input is not gzip compressed
-		if b, err := gunzip(data); *compress && err != nil {
-			fatal(errfmt, filename, err)
-		} else {
+		if b, err := gunzip(data); *compress {
+			// if -z flag was set, fail if the input is not gzip compressed
+			if err != nil {
+				fatal(errfmt, filename, err)
+			}
 			data = b
-			// if implicitly decompressing, announce it
-			if !*compress {
+		} else {
+			if err == nil {
+				data = b
+				// if implicitly decompressing, announce it
 				log("file %q was gzip compressed\n", filename)
 			}
 		}
