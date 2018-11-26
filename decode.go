@@ -7,33 +7,40 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Decode(r io.Reader) (*NamedTag, error) {
-	dec := &decoder{r: r}
-	tag, err := dec.readNamedTag()
-	if err != nil {
-		return nil, errors.WithMessagef(err, "offset %d:", dec.offset)
-	}
-	return tag, nil
+type Decoder struct {
+	r *offsetReader
 }
 
-type decoder struct {
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{r: &offsetReader{r: r}}
+}
+
+type offsetReader struct {
 	r      io.Reader
 	offset int64
 }
 
-func (dec *decoder) Read(p []byte) (n int, err error) {
-	n, err = dec.r.Read(p)
-	dec.offset += int64(n)
+func (r *offsetReader) Read(p []byte) (n int, err error) {
+	n, err = r.r.Read(p)
+	r.offset += int64(n)
 	return n, err
+}
+
+func (dec *Decoder) Decode() (*NamedTag, error) {
+	tag, err := dec.readNamedTag()
+	if err != nil {
+		return nil, errors.WithMessagef(err, "offset %d:", dec.r.offset)
+	}
+	return tag, nil
 }
 
 func readBE(r io.Reader, v interface{}) error {
 	return binary.Read(r, binary.BigEndian, v)
 }
 
-func (dec *decoder) readNamedTag() (*NamedTag, error) {
+func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	var typ Type
-	if err := readBE(dec, &typ); err != nil {
+	if err := readBE(dec.r, &typ); err != nil {
 		return nil, err
 	}
 
@@ -50,27 +57,27 @@ func (dec *decoder) readNamedTag() (*NamedTag, error) {
 	switch typ {
 	case TypeByte:
 		var n int8
-		err = readBE(dec, &n)
+		err = readBE(dec.r, &n)
 		payload = n
 	case TypeShort:
 		var n int16
-		err = readBE(dec, &n)
+		err = readBE(dec.r, &n)
 		payload = n
 	case TypeInt:
 		var n int32
-		err = readBE(dec, &n)
+		err = readBE(dec.r, &n)
 		payload = n
 	case TypeLong:
 		var n int64
-		err = readBE(dec, &n)
+		err = readBE(dec.r, &n)
 		payload = n
 	case TypeFloat:
 		var x float32
-		err = readBE(dec, &x)
+		err = readBE(dec.r, &x)
 		payload = x
 	case TypeDouble:
 		var x float64
-		err = readBE(dec, &x)
+		err = readBE(dec.r, &x)
 		payload = x
 	case TypeByteArray:
 		payload, err = dec.readByteArray()
@@ -95,9 +102,9 @@ func (dec *decoder) readNamedTag() (*NamedTag, error) {
 	return &NamedTag{typ, name, payload}, nil
 }
 
-func (dec *decoder) readByteArray() ([]byte, error) {
+func (dec *Decoder) readByteArray() ([]byte, error) {
 	var length int32
-	if err := readBE(dec, &length); err != nil {
+	if err := readBE(dec.r, &length); err != nil {
 		return nil, err
 	}
 
@@ -106,16 +113,16 @@ func (dec *decoder) readByteArray() ([]byte, error) {
 	}
 
 	b := make([]byte, length)
-	if err := readBE(dec, b); err != nil {
+	if err := readBE(dec.r, b); err != nil {
 		return nil, err
 	}
 
 	return b, nil
 }
 
-func (dec *decoder) readString() (string, error) {
+func (dec *Decoder) readString() (string, error) {
 	var length int16
-	if err := readBE(dec, &length); err != nil {
+	if err := readBE(dec.r, &length); err != nil {
 		return "", err
 	}
 
@@ -124,22 +131,22 @@ func (dec *decoder) readString() (string, error) {
 	}
 
 	b := make([]byte, length)
-	if err := readBE(dec, b); err != nil {
+	if err := readBE(dec.r, b); err != nil {
 		return "", err
 	}
 
 	return string(b), nil
 }
 
-func (dec *decoder) readList() (*List, error) {
+func (dec *Decoder) readList() (*List, error) {
 	var typ Type
-	err := readBE(dec, &typ)
+	err := readBE(dec.r, &typ)
 	if err != nil {
 		return nil, err
 	}
 
 	var length int32
-	if err = readBE(dec, &length); err != nil {
+	if err = readBE(dec.r, &length); err != nil {
 		return nil, err
 	}
 
@@ -152,37 +159,37 @@ func (dec *decoder) readList() (*List, error) {
 	case TypeEnd:
 	case TypeByte:
 		a := make([]int8, length)
-		if err = readBE(dec, a); err != nil {
+		if err = readBE(dec.r, a); err != nil {
 			return nil, err
 		}
 		array = a
 	case TypeShort:
 		a := make([]int16, length)
-		if err = readBE(dec, a); err != nil {
+		if err = readBE(dec.r, a); err != nil {
 			return nil, err
 		}
 		array = a
 	case TypeInt:
 		a := make([]int32, length)
-		if err = readBE(dec, a); err != nil {
+		if err = readBE(dec.r, a); err != nil {
 			return nil, err
 		}
 		array = a
 	case TypeLong:
 		a := make([]int64, length)
-		if err = readBE(dec, a); err != nil {
+		if err = readBE(dec.r, a); err != nil {
 			return nil, err
 		}
 		array = a
 	case TypeFloat:
 		a := make([]float32, length)
-		if err = readBE(dec, a); err != nil {
+		if err = readBE(dec.r, a); err != nil {
 			return nil, err
 		}
 		array = a
 	case TypeDouble:
 		a := make([]float64, length)
-		if err = readBE(dec, a); err != nil {
+		if err = readBE(dec.r, a); err != nil {
 			return nil, err
 		}
 		array = a
@@ -241,7 +248,7 @@ func (dec *decoder) readList() (*List, error) {
 	return &List{typ, array}, nil
 }
 
-func (dec *decoder) readCompound() (Compound, error) {
+func (dec *Decoder) readCompound() (Compound, error) {
 	m := make(Compound)
 	for {
 		tag, err := dec.readNamedTag()
@@ -260,9 +267,9 @@ func (dec *decoder) readCompound() (Compound, error) {
 	}
 }
 
-func (dec *decoder) readIntArray() ([]int32, error) {
+func (dec *Decoder) readIntArray() ([]int32, error) {
 	var length int32
-	if err := readBE(dec, &length); err != nil {
+	if err := readBE(dec.r, &length); err != nil {
 		return nil, err
 	}
 
@@ -271,16 +278,16 @@ func (dec *decoder) readIntArray() ([]int32, error) {
 	}
 
 	a := make([]int32, length)
-	if err := readBE(dec, a); err != nil {
+	if err := readBE(dec.r, a); err != nil {
 		return nil, err
 	}
 
 	return a, nil
 }
 
-func (dec *decoder) readLongArray() ([]int64, error) {
+func (dec *Decoder) readLongArray() ([]int64, error) {
 	var length int32
-	if err := readBE(dec, &length); err != nil {
+	if err := readBE(dec.r, &length); err != nil {
 		return nil, err
 	}
 
@@ -289,7 +296,7 @@ func (dec *decoder) readLongArray() ([]int64, error) {
 	}
 
 	a := make([]int64, length)
-	if err := readBE(dec, a); err != nil {
+	if err := readBE(dec.r, a); err != nil {
 		return nil, err
 	}
 

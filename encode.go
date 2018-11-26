@@ -11,26 +11,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Encode(w io.Writer, tag *NamedTag) error {
-	enc := &encoder{w: w}
-	return enc.writeNamedTag(tag)
-}
-
-func EncodeSorted(w io.Writer, tag *NamedTag) error {
-	enc := &encoder{w: w, sortCompounds: true}
-	return enc.writeNamedTag(tag)
-}
-
-type encoder struct {
+type Encoder struct {
 	w             io.Writer
 	sortCompounds bool
+}
+
+func NewEncoder(w io.Writer) *Encoder {
+	return &Encoder{w: w}
+}
+
+func (enc *Encoder) Encode(tag *NamedTag) error {
+	return enc.writeNamedTag(tag)
+}
+
+func (enc *Encoder) SortCompounds(on bool) {
+	enc.sortCompounds = on
 }
 
 func writeBE(w io.Writer, v interface{}) error {
 	return binary.Write(w, binary.BigEndian, v)
 }
 
-func (enc *encoder) writeNamedTag(tag *NamedTag) (err error) {
+func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 	// handle possible panics from type assertions in writeNamedTag and writeList
 	defer func() {
 		if v := recover(); v != nil {
@@ -74,7 +76,7 @@ func (enc *encoder) writeNamedTag(tag *NamedTag) (err error) {
 	}
 }
 
-func (enc *encoder) writeByteArray(b []byte) error {
+func (enc *Encoder) writeByteArray(b []byte) error {
 	length := len(b)
 	if length > math.MaxInt32 {
 		return errors.Errorf("length overflows int32 (%d)", length)
@@ -87,7 +89,7 @@ func (enc *encoder) writeByteArray(b []byte) error {
 	return writeBE(enc.w, b)
 }
 
-func (enc *encoder) writeString(s string) error {
+func (enc *Encoder) writeString(s string) error {
 	length := len(s)
 	if length > math.MaxInt16 {
 		return errors.Errorf("length overflows int16 (%d)", length)
@@ -100,7 +102,7 @@ func (enc *encoder) writeString(s string) error {
 	return writeBE(enc.w, []byte(s))
 }
 
-func (enc *encoder) writeList(list *List) error {
+func (enc *Encoder) writeList(list *List) error {
 	if err := writeBE(enc.w, list.Type); err != nil {
 		return err
 	}
@@ -169,7 +171,7 @@ func (enc *encoder) writeList(list *List) error {
 	return nil
 }
 
-func (enc *encoder) writeCompound(m Compound) error {
+func (enc *Encoder) writeCompound(m Compound) error {
 	if enc.sortCompounds {
 		a := make([]*NamedTag, len(m))
 		var i int
@@ -193,7 +195,7 @@ func (enc *encoder) writeCompound(m Compound) error {
 	return enc.writeNamedTag(&NamedTag{})
 }
 
-func (enc *encoder) writeIntArray(a []int32) error {
+func (enc *Encoder) writeIntArray(a []int32) error {
 	length := len(a)
 	if length > math.MaxInt32 {
 		return errors.Errorf("length overflows int32 (%d)", length)
@@ -206,7 +208,7 @@ func (enc *encoder) writeIntArray(a []int32) error {
 	return writeBE(enc.w, a)
 }
 
-func (enc *encoder) writeLongArray(a []int64) error {
+func (enc *Encoder) writeLongArray(a []int64) error {
 	length := len(a)
 	if length > math.MaxInt32 {
 		return errors.Errorf("length overflows int32 (%d)", length)
