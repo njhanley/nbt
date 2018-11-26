@@ -6,13 +6,32 @@ import (
 	"math"
 	"reflect"
 	"runtime"
+	"sort"
 
 	"github.com/pkg/errors"
 )
 
-func Encode(w io.Writer, tag *NamedTag) (err error) {
+func Encode(w io.Writer, tag *NamedTag) error {
 	enc := &encoder{w: w}
-	// handle possible panics from writeNamedTag and writeList
+	return enc.writeNamedTag(tag)
+}
+
+func EncodeSorted(w io.Writer, tag *NamedTag) error {
+	enc := &encoder{w: w, sortCompounds: true}
+	return enc.writeNamedTag(tag)
+}
+
+type encoder struct {
+	w             io.Writer
+	sortCompounds bool
+}
+
+func writeBE(w io.Writer, v interface{}) error {
+	return binary.Write(w, binary.BigEndian, v)
+}
+
+func (enc *encoder) writeNamedTag(tag *NamedTag) (err error) {
+	// handle possible panics from type assertions in writeNamedTag and writeList
 	defer func() {
 		if v := recover(); v != nil {
 			if e, ok := v.(*runtime.TypeAssertionError); ok {
@@ -22,18 +41,7 @@ func Encode(w io.Writer, tag *NamedTag) (err error) {
 			}
 		}
 	}()
-	return enc.writeNamedTag(tag)
-}
 
-type encoder struct {
-	w io.Writer
-}
-
-func writeBE(w io.Writer, v interface{}) error {
-	return binary.Write(w, binary.BigEndian, v)
-}
-
-func (enc *encoder) writeNamedTag(tag *NamedTag) (err error) {
 	if err := writeBE(enc.w, tag.Type); err != nil {
 		return err
 	}
@@ -162,9 +170,24 @@ func (enc *encoder) writeList(list *List) error {
 }
 
 func (enc *encoder) writeCompound(m Compound) error {
-	for _, tag := range m {
-		if err := enc.writeNamedTag(tag); err != nil {
-			return err
+	if enc.sortCompounds {
+		a := make([]*NamedTag, len(m))
+		var i int
+		for _, tag := range m {
+			a[i] = tag
+			i++
+		}
+		sort.Slice(a, func(i, j int) bool { return a[i].Name < a[j].Name })
+		for _, tag := range a {
+			if err := enc.writeNamedTag(tag); err != nil {
+				return err
+			}
+		}
+	} else {
+		for _, tag := range m {
+			if err := enc.writeNamedTag(tag); err != nil {
+				return err
+			}
 		}
 	}
 	return enc.writeNamedTag(&NamedTag{})
