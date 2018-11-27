@@ -72,7 +72,7 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 	case TypeLongArray:
 		return enc.writeLongArray(tag.Payload.([]int64))
 	default:
-		return errors.Errorf("unknown type %#x", tag.Type)
+		return errors.Errorf("unknown type %v", tag.Type)
 	}
 }
 
@@ -165,7 +165,7 @@ func (enc *Encoder) writeList(list *List) error {
 			}
 		}
 	default:
-		return errors.Errorf("unknown type %#x", list.Type)
+		return errors.Errorf("unknown type %v", list.Type)
 	}
 
 	return nil

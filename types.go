@@ -1,5 +1,7 @@
 package nbt
 
+import "fmt"
+
 type Type byte
 
 const (
@@ -35,6 +37,9 @@ var typeNames = []string{
 }
 
 func (typ Type) String() string {
+	if int(typ) >= len(typeNames) {
+		return fmt.Sprintf("%#02x", byte(typ))
+	}
 	return typeNames[typ]
 }
 

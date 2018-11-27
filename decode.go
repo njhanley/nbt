@@ -92,7 +92,7 @@ func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	case TypeLongArray:
 		payload, err = dec.readLongArray()
 	default:
-		return nil, errors.Errorf("unknown type %#x", typ)
+		return nil, errors.Errorf("unknown type %v", typ)
 	}
 
 	if err != nil {
@@ -242,7 +242,7 @@ func (dec *Decoder) readList() (*List, error) {
 		}
 		array = a
 	default:
-		return nil, errors.Errorf("unknown type %#x", typ)
+		return nil, errors.Errorf("unknown type %v", typ)
 	}
 
 	return &List{typ, array}, nil
