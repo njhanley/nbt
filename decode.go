@@ -92,7 +92,7 @@ func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	case TypeLongArray:
 		payload, err = dec.readLongArray()
 	default:
-		return nil, errors.Errorf("unknown type %v", typ)
+		return nil, errors.Errorf("unknown type (%v)", typ)
 	}
 
 	if err != nil {
@@ -242,7 +242,7 @@ func (dec *Decoder) readList() (*List, error) {
 		}
 		array = a
 	default:
-		return nil, errors.Errorf("unknown type %v", typ)
+		return nil, errors.Errorf("unknown type (%v)", typ)
 	}
 
 	return &List{typ, array}, nil
@@ -261,7 +261,7 @@ func (dec *Decoder) readCompound() (Compound, error) {
 		}
 
 		if _, exists := m[tag.Name]; exists {
-			return nil, errors.Errorf("duplicate name %q", tag.Name)
+			return nil, errors.Errorf("duplicate name (%q)", tag.Name)
 		}
 		m[tag.Name] = tag
 	}
