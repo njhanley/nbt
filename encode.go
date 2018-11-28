@@ -46,7 +46,7 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 	defer func() {
 		if v := recover(); v != nil {
 			if e, ok := v.(*runtime.TypeAssertionError); ok {
-				err = e
+				err = enc.wrap(e)
 			} else {
 				panic(v)
 			}
