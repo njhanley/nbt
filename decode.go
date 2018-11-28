@@ -2,6 +2,7 @@ package nbt
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
@@ -27,11 +28,15 @@ func (r *offsetReader) Read(p []byte) (n int, err error) {
 }
 
 func (dec *Decoder) Decode() (*NamedTag, error) {
-	tag, err := dec.readNamedTag()
-	if err != nil {
-		return nil, errors.WithMessagef(err, "offset %d:", dec.r.offset)
-	}
-	return tag, nil
+	return dec.readNamedTag()
+}
+
+func (dec *Decoder) wrap(err error) error {
+	return errors.Wrapf(err, "offset %d", dec.r.offset)
+}
+
+func (dec *Decoder) errorf(format string, a ...interface{}) error {
+	return dec.wrap(fmt.Errorf(format, a...))
 }
 
 func readBE(r io.Reader, v interface{}) error {
@@ -41,7 +46,7 @@ func readBE(r io.Reader, v interface{}) error {
 func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	var typ Type
 	if err := readBE(dec.r, &typ); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	if typ == TypeEnd {
@@ -57,27 +62,27 @@ func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	switch typ {
 	case TypeByte:
 		var n int8
-		err = readBE(dec.r, &n)
+		err = dec.wrap(readBE(dec.r, &n))
 		payload = n
 	case TypeShort:
 		var n int16
-		err = readBE(dec.r, &n)
+		err = dec.wrap(readBE(dec.r, &n))
 		payload = n
 	case TypeInt:
 		var n int32
-		err = readBE(dec.r, &n)
+		err = dec.wrap(readBE(dec.r, &n))
 		payload = n
 	case TypeLong:
 		var n int64
-		err = readBE(dec.r, &n)
+		err = dec.wrap(readBE(dec.r, &n))
 		payload = n
 	case TypeFloat:
 		var x float32
-		err = readBE(dec.r, &x)
+		err = dec.wrap(readBE(dec.r, &x))
 		payload = x
 	case TypeDouble:
 		var x float64
-		err = readBE(dec.r, &x)
+		err = dec.wrap(readBE(dec.r, &x))
 		payload = x
 	case TypeByteArray:
 		payload, err = dec.readByteArray()
@@ -92,7 +97,7 @@ func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	case TypeLongArray:
 		payload, err = dec.readLongArray()
 	default:
-		return nil, errors.Errorf("unknown type (%v)", typ)
+		err = dec.errorf("unknown type (%v)", typ)
 	}
 
 	if err != nil {
@@ -105,16 +110,16 @@ func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 func (dec *Decoder) readByteArray() ([]byte, error) {
 	var length int32
 	if err := readBE(dec.r, &length); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	if length < 0 {
-		return nil, errors.Errorf("negative length (%d)", length)
+		return nil, dec.errorf("negative length (%d)", length)
 	}
 
 	b := make([]byte, length)
 	if err := readBE(dec.r, b); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	return b, nil
@@ -123,16 +128,16 @@ func (dec *Decoder) readByteArray() ([]byte, error) {
 func (dec *Decoder) readString() (string, error) {
 	var length int16
 	if err := readBE(dec.r, &length); err != nil {
-		return "", err
+		return "", dec.wrap(err)
 	}
 
 	if length < 0 {
-		return "", errors.Errorf("negative length (%d)", length)
+		return "", dec.errorf("negative length (%d)", length)
 	}
 
 	b := make([]byte, length)
 	if err := readBE(dec.r, b); err != nil {
-		return "", err
+		return "", dec.wrap(err)
 	}
 
 	return string(b), nil
@@ -142,16 +147,16 @@ func (dec *Decoder) readList() (*List, error) {
 	var typ Type
 	err := readBE(dec.r, &typ)
 	if err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	var length int32
 	if err = readBE(dec.r, &length); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	if length < 0 {
-		return nil, errors.Errorf("negative length (%d)", length)
+		return nil, dec.errorf("negative length (%d)", length)
 	}
 
 	var array interface{}
@@ -160,37 +165,37 @@ func (dec *Decoder) readList() (*List, error) {
 	case TypeByte:
 		a := make([]int8, length)
 		if err = readBE(dec.r, a); err != nil {
-			return nil, err
+			return nil, dec.wrap(err)
 		}
 		array = a
 	case TypeShort:
 		a := make([]int16, length)
 		if err = readBE(dec.r, a); err != nil {
-			return nil, err
+			return nil, dec.wrap(err)
 		}
 		array = a
 	case TypeInt:
 		a := make([]int32, length)
 		if err = readBE(dec.r, a); err != nil {
-			return nil, err
+			return nil, dec.wrap(err)
 		}
 		array = a
 	case TypeLong:
 		a := make([]int64, length)
 		if err = readBE(dec.r, a); err != nil {
-			return nil, err
+			return nil, dec.wrap(err)
 		}
 		array = a
 	case TypeFloat:
 		a := make([]float32, length)
 		if err = readBE(dec.r, a); err != nil {
-			return nil, err
+			return nil, dec.wrap(err)
 		}
 		array = a
 	case TypeDouble:
 		a := make([]float64, length)
 		if err = readBE(dec.r, a); err != nil {
-			return nil, err
+			return nil, dec.wrap(err)
 		}
 		array = a
 	case TypeByteArray:
@@ -242,7 +247,7 @@ func (dec *Decoder) readList() (*List, error) {
 		}
 		array = a
 	default:
-		return nil, errors.Errorf("unknown type (%v)", typ)
+		return nil, dec.errorf("unknown type (%v)", typ)
 	}
 
 	return &List{typ, array}, nil
@@ -261,7 +266,7 @@ func (dec *Decoder) readCompound() (Compound, error) {
 		}
 
 		if _, exists := m[tag.Name]; exists {
-			return nil, errors.Errorf("duplicate name (%q)", tag.Name)
+			return nil, dec.errorf("duplicate name (%q)", tag.Name)
 		}
 		m[tag.Name] = tag
 	}
@@ -270,16 +275,16 @@ func (dec *Decoder) readCompound() (Compound, error) {
 func (dec *Decoder) readIntArray() ([]int32, error) {
 	var length int32
 	if err := readBE(dec.r, &length); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	if length < 0 {
-		return nil, errors.Errorf("negative length (%d)", length)
+		return nil, dec.errorf("negative length (%d)", length)
 	}
 
 	a := make([]int32, length)
 	if err := readBE(dec.r, a); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	return a, nil
@@ -288,16 +293,16 @@ func (dec *Decoder) readIntArray() ([]int32, error) {
 func (dec *Decoder) readLongArray() ([]int64, error) {
 	var length int32
 	if err := readBE(dec.r, &length); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	if length < 0 {
-		return nil, errors.Errorf("negative length (%d)", length)
+		return nil, dec.errorf("negative length (%d)", length)
 	}
 
 	a := make([]int64, length)
 	if err := readBE(dec.r, a); err != nil {
-		return nil, err
+		return nil, dec.wrap(err)
 	}
 
 	return a, nil

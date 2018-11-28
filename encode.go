@@ -2,6 +2,7 @@ package nbt
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"math"
 	"reflect"
@@ -28,6 +29,14 @@ func (enc *Encoder) SortCompounds(on bool) {
 	enc.sortCompounds = on
 }
 
+func (enc *Encoder) wrap(err error) error {
+	return errors.WithStack(err)
+}
+
+func (enc *Encoder) errorf(format string, a ...interface{}) error {
+	return enc.wrap(fmt.Errorf(format, a...))
+}
+
 func writeBE(w io.Writer, v interface{}) error {
 	return binary.Write(w, binary.BigEndian, v)
 }
@@ -45,7 +54,7 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 	}()
 
 	if err := writeBE(enc.w, tag.Type); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
 	if tag.Type == TypeEnd {
@@ -58,7 +67,7 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 
 	switch tag.Type {
 	case TypeByte, TypeShort, TypeInt, TypeLong, TypeFloat, TypeDouble:
-		return writeBE(enc.w, tag.Payload)
+		return enc.wrap(writeBE(enc.w, tag.Payload))
 	case TypeByteArray:
 		return enc.writeByteArray(tag.Payload.([]byte))
 	case TypeString:
@@ -72,62 +81,62 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 	case TypeLongArray:
 		return enc.writeLongArray(tag.Payload.([]int64))
 	default:
-		return errors.Errorf("unknown type (%v)", tag.Type)
+		return enc.errorf("unknown type (%v)", tag.Type)
 	}
 }
 
 func (enc *Encoder) writeByteArray(b []byte) error {
 	length := len(b)
 	if length > math.MaxInt32 {
-		return errors.Errorf("length overflows int32 (%d)", length)
+		return enc.errorf("length overflows int32 (%d)", length)
 	}
 
 	if err := writeBE(enc.w, int32(length)); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
-	return writeBE(enc.w, b)
+	return enc.wrap(writeBE(enc.w, b))
 }
 
 func (enc *Encoder) writeString(s string) error {
 	length := len(s)
 	if length > math.MaxInt16 {
-		return errors.Errorf("length overflows int16 (%d)", length)
+		return enc.errorf("length overflows int16 (%d)", length)
 	}
 
 	if err := writeBE(enc.w, int16(length)); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
-	return writeBE(enc.w, []byte(s))
+	return enc.wrap(writeBE(enc.w, []byte(s)))
 }
 
 func (enc *Encoder) writeList(list *List) error {
 	if err := writeBE(enc.w, list.Type); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
 	if list.Type == TypeEnd && list.Array == nil {
-		return writeBE(enc.w, int32(0))
+		return enc.wrap(writeBE(enc.w, int32(0)))
 	}
 
 	value := reflect.ValueOf(list.Array)
 	if kind := value.Kind(); kind != reflect.Slice {
-		return errors.Errorf("List.Array is not a slice (%v)", kind)
+		return enc.errorf("List.Array is not a slice (%v)", kind)
 	}
 
 	length := value.Len()
 	if length > math.MaxInt32 {
-		return errors.Errorf("length overflows int32 (%d)", length)
+		return enc.errorf("length overflows int32 (%d)", length)
 	}
 
 	if err := writeBE(enc.w, int32(length)); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
 	switch list.Type {
 	case TypeByte, TypeShort, TypeInt, TypeLong, TypeFloat, TypeDouble:
-		return writeBE(enc.w, list.Array)
+		return enc.wrap(writeBE(enc.w, list.Array))
 	case TypeByteArray:
 		for _, a := range list.Array.([][]byte) {
 			if err := enc.writeByteArray(a); err != nil {
@@ -165,7 +174,7 @@ func (enc *Encoder) writeList(list *List) error {
 			}
 		}
 	default:
-		return errors.Errorf("unknown type (%v)", list.Type)
+		return enc.errorf("unknown type (%v)", list.Type)
 	}
 
 	return nil
@@ -198,25 +207,25 @@ func (enc *Encoder) writeCompound(m Compound) error {
 func (enc *Encoder) writeIntArray(a []int32) error {
 	length := len(a)
 	if length > math.MaxInt32 {
-		return errors.Errorf("length overflows int32 (%d)", length)
+		return enc.errorf("length overflows int32 (%d)", length)
 	}
 
 	if err := writeBE(enc.w, int32(length)); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
-	return writeBE(enc.w, a)
+	return enc.wrap(writeBE(enc.w, a))
 }
 
 func (enc *Encoder) writeLongArray(a []int64) error {
 	length := len(a)
 	if length > math.MaxInt32 {
-		return errors.Errorf("length overflows int32 (%d)", length)
+		return enc.errorf("length overflows int32 (%d)", length)
 	}
 
 	if err := writeBE(enc.w, int32(length)); err != nil {
-		return err
+		return enc.wrap(err)
 	}
 
-	return writeBE(enc.w, a)
+	return enc.wrap(writeBE(enc.w, a))
 }
