@@ -165,45 +165,35 @@ func (dec *Decoder) readList() (*List, error) {
 		return nil, err
 	}
 
+	if typ == TypeEnd {
+		return &List{}, nil
+	}
+
 	var array interface{}
+	if typ < TypeByteArray {
+		switch typ {
+		case TypeByte:
+			array = make([]int8, length)
+		case TypeShort:
+			array = make([]int16, length)
+		case TypeInt:
+			array = make([]int32, length)
+		case TypeLong:
+			array = make([]int64, length)
+		case TypeFloat:
+			array = make([]float32, length)
+		case TypeDouble:
+			array = make([]float64, length)
+		}
+
+		if err := readBE(dec.r, array); err != nil {
+			return nil, dec.wrap(err)
+		}
+
+		return &List{typ, array}, nil
+	}
+
 	switch typ {
-	case TypeEnd:
-	case TypeByte:
-		a := make([]int8, length)
-		if err = readBE(dec.r, a); err != nil {
-			return nil, dec.wrap(err)
-		}
-		array = a
-	case TypeShort:
-		a := make([]int16, length)
-		if err = readBE(dec.r, a); err != nil {
-			return nil, dec.wrap(err)
-		}
-		array = a
-	case TypeInt:
-		a := make([]int32, length)
-		if err = readBE(dec.r, a); err != nil {
-			return nil, dec.wrap(err)
-		}
-		array = a
-	case TypeLong:
-		a := make([]int64, length)
-		if err = readBE(dec.r, a); err != nil {
-			return nil, dec.wrap(err)
-		}
-		array = a
-	case TypeFloat:
-		a := make([]float32, length)
-		if err = readBE(dec.r, a); err != nil {
-			return nil, dec.wrap(err)
-		}
-		array = a
-	case TypeDouble:
-		a := make([]float64, length)
-		if err = readBE(dec.r, a); err != nil {
-			return nil, dec.wrap(err)
-		}
-		array = a
 	case TypeByteArray:
 		a := make([][]byte, length)
 		for i := range a {
