@@ -53,8 +53,8 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 		}
 	}()
 
-	if err := writeBE(enc.w, tag.Type); err != nil {
-		return enc.wrap(err)
+	if err := enc.writeType(tag.Type); err != nil {
+		return err
 	}
 
 	if tag.Type == TypeEnd {
@@ -85,6 +85,10 @@ func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
 	}
 }
 
+func (enc *Encoder) writeType(typ Type) error {
+	return enc.wrap(writeBE(enc.w, typ))
+}
+
 func (enc *Encoder) writeByteArray(b []byte) error {
 	length := len(b)
 	if length > math.MaxInt32 {
@@ -112,8 +116,8 @@ func (enc *Encoder) writeString(s string) error {
 }
 
 func (enc *Encoder) writeList(list *List) error {
-	if err := writeBE(enc.w, list.Type); err != nil {
-		return enc.wrap(err)
+	if err := enc.writeType(list.Type); err != nil {
+		return err
 	}
 
 	if list.Type == TypeEnd && list.Array == nil {
