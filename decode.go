@@ -46,7 +46,7 @@ func readBE(r io.Reader, v interface{}) error {
 func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	typ, err := dec.readType()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if typ == TypeEnd {
@@ -114,13 +114,9 @@ func (dec *Decoder) readType() (Type, error) {
 }
 
 func (dec *Decoder) readByteArray() ([]byte, error) {
-	var length int32
-	if err := readBE(dec.r, &length); err != nil {
-		return nil, dec.wrap(err)
-	}
-
-	if length < 0 {
-		return nil, dec.errorf("negative length (%d)", length)
+	length, err := dec.readLength()
+	if err != nil {
+		return nil, err
 	}
 
 	b := make([]byte, length)
@@ -129,6 +125,15 @@ func (dec *Decoder) readByteArray() ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func (dec *Decoder) readLength() (int32, error) {
+	var length int32
+	err := dec.wrap(readBE(dec.r, &length))
+	if length < 0 {
+		err = dec.errorf("negative length (%d)", length)
+	}
+	return length, err
 }
 
 func (dec *Decoder) readString() (string, error) {
@@ -155,13 +160,9 @@ func (dec *Decoder) readList() (*List, error) {
 		return nil, err
 	}
 
-	var length int32
-	if err = readBE(dec.r, &length); err != nil {
-		return nil, dec.wrap(err)
-	}
-
-	if length < 0 {
-		return nil, dec.errorf("negative length (%d)", length)
+	length, err := dec.readLength()
+	if err != nil {
+		return nil, err
 	}
 
 	var array interface{}
@@ -278,13 +279,9 @@ func (dec *Decoder) readCompound() (Compound, error) {
 }
 
 func (dec *Decoder) readIntArray() ([]int32, error) {
-	var length int32
-	if err := readBE(dec.r, &length); err != nil {
-		return nil, dec.wrap(err)
-	}
-
-	if length < 0 {
-		return nil, dec.errorf("negative length (%d)", length)
+	length, err := dec.readLength()
+	if err != nil {
+		return nil, err
 	}
 
 	a := make([]int32, length)
@@ -296,13 +293,9 @@ func (dec *Decoder) readIntArray() ([]int32, error) {
 }
 
 func (dec *Decoder) readLongArray() ([]int64, error) {
-	var length int32
-	if err := readBE(dec.r, &length); err != nil {
-		return nil, dec.wrap(err)
-	}
-
-	if length < 0 {
-		return nil, dec.errorf("negative length (%d)", length)
+	length, err := dec.readLength()
+	if err != nil {
+		return nil, err
 	}
 
 	a := make([]int64, length)
