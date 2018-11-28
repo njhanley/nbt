@@ -44,9 +44,9 @@ func readBE(r io.Reader, v interface{}) error {
 }
 
 func (dec *Decoder) readNamedTag() (*NamedTag, error) {
-	var typ Type
-	if err := readBE(dec.r, &typ); err != nil {
-		return nil, dec.wrap(err)
+	typ, err := dec.readType()
+	if err != nil {
+		return err
 	}
 
 	if typ == TypeEnd {
@@ -107,6 +107,12 @@ func (dec *Decoder) readNamedTag() (*NamedTag, error) {
 	return &NamedTag{typ, name, payload}, nil
 }
 
+func (dec *Decoder) readType() (Type, error) {
+	var typ Type
+	err := dec.wrap(readBE(dec.r, &typ))
+	return typ, err
+}
+
 func (dec *Decoder) readByteArray() ([]byte, error) {
 	var length int32
 	if err := readBE(dec.r, &length); err != nil {
@@ -144,10 +150,9 @@ func (dec *Decoder) readString() (string, error) {
 }
 
 func (dec *Decoder) readList() (*List, error) {
-	var typ Type
-	err := readBE(dec.r, &typ)
+	typ, err := dec.readType()
 	if err != nil {
-		return nil, dec.wrap(err)
+		return nil, err
 	}
 
 	var length int32
