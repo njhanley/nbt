@@ -90,16 +90,17 @@ func (enc *Encoder) writeType(typ Type) error {
 }
 
 func (enc *Encoder) writeByteArray(b []byte) error {
-	length := len(b)
+	if err := enc.writeLength(len(b)); err != nil {
+		return err
+	}
+	return enc.wrap(writeBE(enc.w, b))
+}
+
+func (enc *Encoder) writeLength(length int) error {
 	if length > math.MaxInt32 {
 		return enc.errorf("length overflows int32 (%d)", length)
 	}
-
-	if err := writeBE(enc.w, int32(length)); err != nil {
-		return enc.wrap(err)
-	}
-
-	return enc.wrap(writeBE(enc.w, b))
+	return enc.wrap(writeBE(enc.w, int32(length)))
 }
 
 func (enc *Encoder) writeString(s string) error {
@@ -121,7 +122,7 @@ func (enc *Encoder) writeList(list *List) error {
 	}
 
 	if list.Type == TypeEnd && list.Array == nil {
-		return enc.wrap(writeBE(enc.w, int32(0)))
+		return enc.writeLength(0)
 	}
 
 	value := reflect.ValueOf(list.Array)
@@ -130,12 +131,8 @@ func (enc *Encoder) writeList(list *List) error {
 	}
 
 	length := value.Len()
-	if length > math.MaxInt32 {
-		return enc.errorf("length overflows int32 (%d)", length)
-	}
-
-	if err := writeBE(enc.w, int32(length)); err != nil {
-		return enc.wrap(err)
+	if err := enc.writeLength(length); err != nil {
+		return err
 	}
 
 	switch list.Type {
@@ -209,27 +206,15 @@ func (enc *Encoder) writeCompound(m Compound) error {
 }
 
 func (enc *Encoder) writeIntArray(a []int32) error {
-	length := len(a)
-	if length > math.MaxInt32 {
-		return enc.errorf("length overflows int32 (%d)", length)
+	if err := enc.writeLength(len(a)); err != nil {
+		return err
 	}
-
-	if err := writeBE(enc.w, int32(length)); err != nil {
-		return enc.wrap(err)
-	}
-
 	return enc.wrap(writeBE(enc.w, a))
 }
 
 func (enc *Encoder) writeLongArray(a []int64) error {
-	length := len(a)
-	if length > math.MaxInt32 {
-		return enc.errorf("length overflows int32 (%d)", length)
+	if err := enc.writeLength(len(a)); err != nil {
+		return err
 	}
-
-	if err := writeBE(enc.w, int32(length)); err != nil {
-		return enc.wrap(err)
-	}
-
 	return enc.wrap(writeBE(enc.w, a))
 }
