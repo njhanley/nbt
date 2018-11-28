@@ -32,11 +32,35 @@ func (dec *Decoder) Decode() (*NamedTag, error) {
 }
 
 func (dec *Decoder) wrap(err error) error {
-	return errors.Wrapf(err, "offset %d", dec.r.offset)
+	if err != nil {
+		return &DecodeError{dec.r.offset, errors.WithStack(err)}
+	}
+	return nil
 }
 
 func (dec *Decoder) errorf(format string, a ...interface{}) error {
 	return dec.wrap(fmt.Errorf(format, a...))
+}
+
+type DecodeError struct {
+	Offset int64
+	Err    error
+}
+
+func (e *DecodeError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *DecodeError) Format(f fmt.State, c rune) {
+	if f.Flag('+') {
+		fmt.Fprintf(f, "offset %d: %+v", e.Offset, e.Err)
+	} else {
+		fmt.Fprint(f, e.Err)
+	}
+}
+
+func (e *DecodeError) Cause() error {
+	return e.Err
 }
 
 func readBE(r io.Reader, v interface{}) error {
