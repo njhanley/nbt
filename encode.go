@@ -42,12 +42,13 @@ func writeBE(w io.Writer, v interface{}) error {
 }
 
 func (enc *Encoder) writeNamedTag(tag *NamedTag) (err error) {
-	// handle possible panics from type assertions in writeNamedTag and writeList
+	// handle possible panics from reflection and type assertions in writeNamedTag and writeList
 	defer func() {
 		if v := recover(); v != nil {
-			if e, ok := v.(*runtime.TypeAssertionError); ok {
-				err = enc.wrap(e)
-			} else {
+			switch e := v.(type) {
+			case *reflect.ValueError, *runtime.TypeAssertionError:
+				err = enc.wrap(e.(error))
+			default:
 				panic(v)
 			}
 		}
@@ -121,21 +122,12 @@ func (enc *Encoder) writeList(l *List) error {
 		return err
 	}
 
-	if l.Type == TypeEnd && l.Array == nil {
-		return enc.writeLength(0)
-	}
-
-	value := reflect.ValueOf(l.Array)
-	if kind := value.Kind(); kind != reflect.Slice {
-		return enc.errorf("List.Array is not a slice (%v)", kind)
-	}
-
-	length := value.Len()
-	if err := enc.writeLength(length); err != nil {
+	if err := enc.writeLength(l.Length()); err != nil {
 		return err
 	}
 
 	switch l.Type {
+	case TypeEnd:
 	case TypeByte, TypeShort, TypeInt, TypeLong, TypeFloat, TypeDouble:
 		return enc.wrap(writeBE(enc.w, l.Array))
 	case TypeByteArray:

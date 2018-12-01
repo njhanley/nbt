@@ -1,6 +1,9 @@
 package nbt
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 type Type byte
 
@@ -100,6 +103,13 @@ func (tag *NamedTag) ToLongArray() []int64 {
 type List struct {
 	Type  Type
 	Array interface{}
+}
+
+func (l *List) Length() int {
+	if l.Type == TypeEnd && l.Array == nil {
+		return 0
+	}
+	return reflect.ValueOf(l.Array).Len()
 }
 
 func (l *List) ToByte() []int8 {
