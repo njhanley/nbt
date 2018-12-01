@@ -116,16 +116,16 @@ func (enc *Encoder) writeString(s string) error {
 	return enc.wrap(writeBE(enc.w, []byte(s)))
 }
 
-func (enc *Encoder) writeList(list *List) error {
-	if err := enc.writeType(list.Type); err != nil {
+func (enc *Encoder) writeList(l *List) error {
+	if err := enc.writeType(l.Type); err != nil {
 		return err
 	}
 
-	if list.Type == TypeEnd && list.Array == nil {
+	if l.Type == TypeEnd && l.Array == nil {
 		return enc.writeLength(0)
 	}
 
-	value := reflect.ValueOf(list.Array)
+	value := reflect.ValueOf(l.Array)
 	if kind := value.Kind(); kind != reflect.Slice {
 		return enc.errorf("List.Array is not a slice (%v)", kind)
 	}
@@ -135,47 +135,47 @@ func (enc *Encoder) writeList(list *List) error {
 		return err
 	}
 
-	switch list.Type {
+	switch l.Type {
 	case TypeByte, TypeShort, TypeInt, TypeLong, TypeFloat, TypeDouble:
-		return enc.wrap(writeBE(enc.w, list.Array))
+		return enc.wrap(writeBE(enc.w, l.Array))
 	case TypeByteArray:
-		for _, a := range list.Array.([][]byte) {
+		for _, a := range l.Array.([][]byte) {
 			if err := enc.writeByteArray(a); err != nil {
 				return err
 			}
 		}
 	case TypeString:
-		for _, a := range list.Array.([]string) {
+		for _, a := range l.Array.([]string) {
 			if err := enc.writeString(a); err != nil {
 				return err
 			}
 		}
 	case TypeList:
-		for _, a := range list.Array.([]*List) {
+		for _, a := range l.Array.([]*List) {
 			if err := enc.writeList(a); err != nil {
 				return err
 			}
 		}
 	case TypeCompound:
-		for _, a := range list.Array.([]Compound) {
+		for _, a := range l.Array.([]Compound) {
 			if err := enc.writeCompound(a); err != nil {
 				return err
 			}
 		}
 	case TypeIntArray:
-		for _, a := range list.Array.([][]int32) {
+		for _, a := range l.Array.([][]int32) {
 			if err := enc.writeIntArray(a); err != nil {
 				return err
 			}
 		}
 	case TypeLongArray:
-		for _, a := range list.Array.([][]int64) {
+		for _, a := range l.Array.([][]int64) {
 			if err := enc.writeLongArray(a); err != nil {
 				return err
 			}
 		}
 	default:
-		return enc.errorf("unknown type (%v)", list.Type)
+		return enc.errorf("unknown type (%v)", l.Type)
 	}
 
 	return nil

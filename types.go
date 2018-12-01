@@ -102,52 +102,52 @@ type List struct {
 	Array interface{}
 }
 
-func (list *List) ToByte() []int8 {
-	return list.Array.([]int8)
+func (l *List) ToByte() []int8 {
+	return l.Array.([]int8)
 }
 
-func (list *List) ToShort() []int16 {
-	return list.Array.([]int16)
+func (l *List) ToShort() []int16 {
+	return l.Array.([]int16)
 }
 
-func (list *List) ToInt() []int32 {
-	return list.Array.([]int32)
+func (l *List) ToInt() []int32 {
+	return l.Array.([]int32)
 }
 
-func (list *List) ToLong() []int64 {
-	return list.Array.([]int64)
+func (l *List) ToLong() []int64 {
+	return l.Array.([]int64)
 }
 
-func (list *List) ToFloat() []float32 {
-	return list.Array.([]float32)
+func (l *List) ToFloat() []float32 {
+	return l.Array.([]float32)
 }
 
-func (list *List) ToDouble() []float64 {
-	return list.Array.([]float64)
+func (l *List) ToDouble() []float64 {
+	return l.Array.([]float64)
 }
 
-func (list *List) ToByteArray() [][]byte {
-	return list.Array.([][]byte)
+func (l *List) ToByteArray() [][]byte {
+	return l.Array.([][]byte)
 }
 
-func (list *List) ToString() []string {
-	return list.Array.([]string)
+func (l *List) ToString() []string {
+	return l.Array.([]string)
 }
 
-func (list *List) ToList() []*List {
-	return list.Array.([]*List)
+func (l *List) ToList() []*List {
+	return l.Array.([]*List)
 }
 
-func (list *List) ToCompound() []Compound {
-	return list.Array.([]Compound)
+func (l *List) ToCompound() []Compound {
+	return l.Array.([]Compound)
 }
 
-func (list *List) ToIntArray() [][]int32 {
-	return list.Array.([][]int32)
+func (l *List) ToIntArray() [][]int32 {
+	return l.Array.([][]int32)
 }
 
-func (list *List) ToLongArray() [][]int64 {
-	return list.Array.([][]int64)
+func (l *List) ToLongArray() [][]int64 {
+	return l.Array.([][]int64)
 }
 
 type Compound map[string]*NamedTag
