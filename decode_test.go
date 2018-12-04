@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestDecode(t *testing.T) {
+func TestDecoder(t *testing.T) {
 	tag, err := NewDecoder(bytes.NewReader(testData)).Decode()
 	if err != nil {
 		t.Fatal(err)

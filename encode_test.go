@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestEncodeSorted(t *testing.T) {
+func TestEncoder(t *testing.T) {
 	buf := new(bytes.Buffer)
 	enc := NewEncoder(buf)
 	enc.SortCompounds(true)
