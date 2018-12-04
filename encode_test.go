@@ -13,9 +13,7 @@ func TestEncodeSorted(t *testing.T) {
 		t.Fatal(err)
 	}
 	data := buf.Bytes()
-	for i, n := range data {
-		if i >= len(testData) || n != testData[i] {
-			t.Fatalf("expected and got differ at byte %d:\nexpected: %#02v\ngot: %#02v\n", i, testData, data)
-		}
+	if diff := cmp.Diff(testData, data); diff != "" {
+		t.Fatalf("cmp.Diff(expected, got):\n%v", diff)
 	}
 }
