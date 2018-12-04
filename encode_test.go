@@ -3,6 +3,8 @@ package nbt
 import (
 	"bytes"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestEncoder(t *testing.T) {
