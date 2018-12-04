@@ -12,6 +12,7 @@ func TestDecoder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if diff := cmp.Diff(testTag, tag); diff != "" {
 		t.Fatalf("cmp.Diff(expected, got):\n%v", diff)
 	}

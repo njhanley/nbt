@@ -12,6 +12,7 @@ func TestMarshalJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if diff := cmp.Diff(testJSON, data); diff != "" {
 		t.Fatalf("cmp.Diff(expected, got):\n%v", diff)
 	}
@@ -22,6 +23,7 @@ func TestUnmarshalJSON(t *testing.T) {
 	if err := json.Unmarshal(testJSON, tag); err != nil {
 		t.Fatal(err)
 	}
+
 	if diff := cmp.Diff(testTag, tag); diff != "" {
 		t.Fatalf("cmp.Diff(expected, got):\n%v", diff)
 	}
