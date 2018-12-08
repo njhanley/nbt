@@ -679,3 +679,51 @@ func (tag *Tag) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+func (tag *Tag) ToByte() int8 {
+	return tag.Payload.(int8)
+}
+
+func (tag *Tag) ToShort() int16 {
+	return tag.Payload.(int16)
+}
+
+func (tag *Tag) ToInt() int32 {
+	return tag.Payload.(int32)
+}
+
+func (tag *Tag) ToLong() int64 {
+	return tag.Payload.(int64)
+}
+
+func (tag *Tag) ToFloat() float32 {
+	return tag.Payload.(float32)
+}
+
+func (tag *Tag) ToDouble() float64 {
+	return tag.Payload.(float64)
+}
+
+func (tag *Tag) ToByteArray() []byte {
+	return tag.Payload.([]byte)
+}
+
+func (tag *Tag) ToString() string {
+	return tag.Payload.(string)
+}
+
+func (tag *Tag) ToList() *List {
+	return tag.Payload.(*List)
+}
+
+func (tag *Tag) ToCompound() Compound {
+	return tag.Payload.(Compound)
+}
+
+func (tag *Tag) ToIntArray() []int32 {
+	return tag.Payload.([]int32)
+}
+
+func (tag *Tag) ToLongArray() []int64 {
+	return tag.Payload.([]int64)
+}
