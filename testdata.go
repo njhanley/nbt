@@ -8,132 +8,110 @@ var testTag = &NamedTag{
 	Type: TypeCompound,
 	Name: "root",
 	Payload: Compound{
-		"byteMin": &NamedTag{
+		"byteMin": &Tag{
 			Type:    TypeByte,
-			Name:    "byteMin",
 			Payload: int8(math.MinInt8),
 		},
-		"byteMax": &NamedTag{
+		"byteMax": &Tag{
 			Type:    TypeByte,
-			Name:    "byteMax",
 			Payload: int8(math.MaxInt8),
 		},
-		"shortMin": &NamedTag{
+		"shortMin": &Tag{
 			Type:    TypeShort,
-			Name:    "shortMin",
 			Payload: int16(math.MinInt16),
 		},
-		"shortMax": &NamedTag{
+		"shortMax": &Tag{
 			Type:    TypeShort,
-			Name:    "shortMax",
 			Payload: int16(math.MaxInt16),
 		},
-		"intMin": &NamedTag{
+		"intMin": &Tag{
 			Type:    TypeInt,
-			Name:    "intMin",
 			Payload: int32(math.MinInt32),
 		},
-		"intMax": &NamedTag{
+		"intMax": &Tag{
 			Type:    TypeInt,
-			Name:    "intMax",
 			Payload: int32(math.MaxInt32),
 		},
-		"longMin": &NamedTag{
+		"longMin": &Tag{
 			Type:    TypeLong,
-			Name:    "longMin",
 			Payload: int64(math.MinInt64),
 		},
-		"longMax": &NamedTag{
+		"longMax": &Tag{
 			Type:    TypeLong,
-			Name:    "longMax",
 			Payload: int64(math.MaxInt64),
 		},
-		"floatMax": &NamedTag{
+		"floatMax": &Tag{
 			Type:    TypeFloat,
-			Name:    "floatMax",
 			Payload: float32(math.MaxFloat32),
 		},
-		"floatSmallestNonzero": &NamedTag{
+		"floatSmallestNonzero": &Tag{
 			Type:    TypeFloat,
-			Name:    "floatSmallestNonzero",
 			Payload: float32(math.SmallestNonzeroFloat32),
 		},
-		"doubleMax": &NamedTag{
+		"doubleMax": &Tag{
 			Type:    TypeDouble,
-			Name:    "doubleMax",
 			Payload: float64(math.MaxFloat64),
 		},
-		"doubleSmallestNonzero": &NamedTag{
+		"doubleSmallestNonzero": &Tag{
 			Type:    TypeDouble,
-			Name:    "doubleSmallestNonzero",
 			Payload: float64(math.SmallestNonzeroFloat64),
 		},
-		"byteArray": &NamedTag{
+		"byteArray": &Tag{
 			Type:    TypeByteArray,
-			Name:    "byteArray",
 			Payload: []byte{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251},
 		},
-		"string": &NamedTag{
+		"string": &Tag{
 			Type:    TypeString,
-			Name:    "string",
 			Payload: "Hello, world!",
 		},
-		"listEmpty": &NamedTag{
+		"listEmpty": &Tag{
 			Type:    TypeList,
-			Name:    "listEmpty",
 			Payload: &List{},
 		},
-		"listByte": &NamedTag{
+		"listByte": &Tag{
 			Type: TypeList,
-			Name: "listByte",
 			Payload: &List{
 				Type:  TypeByte,
 				Array: []int8{math.MinInt8, math.MaxInt8},
 			},
 		},
-		"listShort": &NamedTag{
+		"listShort": &Tag{
 			Type: TypeList,
-			Name: "listShort",
 			Payload: &List{
 				Type:  TypeShort,
 				Array: []int16{math.MinInt16, math.MaxInt16},
 			},
 		},
-		"listInt": &NamedTag{
+		"listInt": &Tag{
 			Type: TypeList,
-			Name: "listInt",
 			Payload: &List{
 				Type:  TypeInt,
 				Array: []int32{math.MinInt32, math.MaxInt32},
 			},
 		},
-		"listLong": &NamedTag{
+		"listLong": &Tag{
 			Type: TypeList,
-			Name: "listLong",
 			Payload: &List{
 				Type:  TypeLong,
 				Array: []int64{math.MinInt64, math.MaxInt64},
 			},
 		},
-		"listFloat": &NamedTag{
+		"listFloat": &Tag{
 			Type: TypeList,
-			Name: "listFloat",
 			Payload: &List{
 				Type:  TypeFloat,
 				Array: []float32{math.SmallestNonzeroFloat32, math.MaxFloat32},
 			},
 		},
-		"listDouble": &NamedTag{
+		"listDouble": &Tag{
 			Type: TypeList,
-			Name: "listDouble",
 			Payload: &List{
 				Type:  TypeDouble,
 				Array: []float64{math.SmallestNonzeroFloat64, math.MaxFloat64},
 			},
 		},
-		"listByteArray": &NamedTag{
+		"listByteArray": &Tag{
 			Type: TypeList,
-			Name: "listByteArray",
 			Payload: &List{
 				Type: TypeByteArray,
 				Array: [][]byte{
@@ -142,17 +120,15 @@ var testTag = &NamedTag{
 				},
 			},
 		},
-		"listString": &NamedTag{
+		"listString": &Tag{
 			Type: TypeList,
-			Name: "listString",
 			Payload: &List{
 				Type:  TypeString,
 				Array: []string{"foo", "bar"},
 			},
 		},
-		"listList": &NamedTag{
+		"listList": &Tag{
 			Type: TypeList,
-			Name: "listList",
 			Payload: &List{
 				Type: TypeList,
 				Array: []*List{
@@ -167,32 +143,28 @@ var testTag = &NamedTag{
 				},
 			},
 		},
-		"listCompound": &NamedTag{
+		"listCompound": &Tag{
 			Type: TypeList,
-			Name: "listCompound",
 			Payload: &List{
 				Type: TypeCompound,
 				Array: []Compound{
 					{
-						"foo": &NamedTag{
+						"foo": &Tag{
 							Type:    TypeString,
-							Name:    "foo",
 							Payload: "foo",
 						},
 					},
 					{
-						"bar": &NamedTag{
+						"bar": &Tag{
 							Type:    TypeString,
-							Name:    "bar",
 							Payload: "bar",
 						},
 					},
 				},
 			},
 		},
-		"listIntArray": &NamedTag{
+		"listIntArray": &Tag{
 			Type: TypeList,
-			Name: "listIntArray",
 			Payload: &List{
 				Type: TypeIntArray,
 				Array: [][]int32{
@@ -201,9 +173,8 @@ var testTag = &NamedTag{
 				},
 			},
 		},
-		"listLongArray": &NamedTag{
+		"listLongArray": &Tag{
 			Type: TypeList,
-			Name: "listLongArray",
 			Payload: &List{
 				Type: TypeLongArray,
 				Array: [][]int64{
@@ -212,19 +183,16 @@ var testTag = &NamedTag{
 				},
 			},
 		},
-		"compoundEmpty": &NamedTag{
+		"compoundEmpty": &Tag{
 			Type:    TypeCompound,
-			Name:    "compoundEmpty",
 			Payload: Compound{},
 		},
-		"intArray": &NamedTag{
+		"intArray": &Tag{
 			Type:    TypeIntArray,
-			Name:    "intArray",
 			Payload: []int32{math.MinInt32, math.MaxInt32},
 		},
-		"longArray": &NamedTag{
+		"longArray": &Tag{
 			Type:    TypeLongArray,
-			Name:    "longArray",
 			Payload: []int64{math.MinInt64, math.MaxInt64},
 		},
 	},

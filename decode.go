@@ -288,7 +288,7 @@ func (dec *Decoder) readCompound() (Compound, error) {
 		if _, exists := m[tag.Name]; exists {
 			return nil, dec.errorf("duplicate name (%q)", tag.Name)
 		}
-		m[tag.Name] = tag
+		m[tag.Name] = &Tag{tag.Type, tag.Payload}
 	}
 }
 

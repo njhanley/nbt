@@ -644,52 +644,28 @@ func (l *List) ToLongArray() [][]int64 {
 	return l.Array.([][]int64)
 }
 
-type Compound map[string]*NamedTag
+type Compound map[string]*Tag
 
-type jsonCompound map[string]*anonymousTag
-
-func (m Compound) MarshalJSON() ([]byte, error) {
-	_m := make(jsonCompound, len(m))
-	for name, tag := range m {
-		_m[name] = &anonymousTag{tag.Type, tag.Payload}
-	}
-	return json.Marshal(_m)
-}
-
-func (m *Compound) UnmarshalJSON(data []byte) error {
-	var _m jsonCompound
-	if err := json.Unmarshal(data, &_m); err != nil {
-		return err
-	}
-
-	*m = make(Compound, len(_m))
-	for name, tag := range _m {
-		(*m)[name] = &NamedTag{tag.Type, name, tag.Payload}
-	}
-
-	return nil
-}
-
-type anonymousTag struct {
+type Tag struct {
 	Type    Type
 	Payload interface{}
 }
 
-type jsonAnonymousTag struct {
+type jsonTag struct {
 	Type    Type            `json:"type"`
 	Payload json.RawMessage `json:"payload"`
 }
 
-func (tag *anonymousTag) MarshalJSON() ([]byte, error) {
+func (tag *Tag) MarshalJSON() ([]byte, error) {
 	payload, err := payloadMarshalJSON(tag.Type, tag.Payload)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(&jsonAnonymousTag{tag.Type, payload})
+	return json.Marshal(&jsonTag{tag.Type, payload})
 }
 
-func (tag *anonymousTag) UnmarshalJSON(data []byte) error {
-	_tag := new(jsonAnonymousTag)
+func (tag *Tag) UnmarshalJSON(data []byte) error {
+	_tag := new(jsonTag)
 	if err := json.Unmarshal(data, _tag); err != nil {
 		return err
 	}
@@ -699,7 +675,7 @@ func (tag *anonymousTag) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*tag = anonymousTag{_tag.Type, payload}
+	*tag = Tag{_tag.Type, payload}
 
 	return nil
 }

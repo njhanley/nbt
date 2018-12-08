@@ -177,8 +177,8 @@ func (enc *Encoder) writeCompound(m Compound) error {
 	if enc.sortCompounds {
 		a := make([]*NamedTag, len(m))
 		var i int
-		for _, tag := range m {
-			a[i] = tag
+		for name, tag := range m {
+			a[i] = &NamedTag{tag.Type, name, tag.Payload}
 			i++
 		}
 		sort.Slice(a, func(i, j int) bool { return a[i].Name < a[j].Name })
@@ -188,8 +188,8 @@ func (enc *Encoder) writeCompound(m Compound) error {
 			}
 		}
 	} else {
-		for _, tag := range m {
-			if err := enc.writeNamedTag(tag); err != nil {
+		for name, tag := range m {
+			if err := enc.writeNamedTag(&NamedTag{tag.Type, name, tag.Payload}); err != nil {
 				return err
 			}
 		}
