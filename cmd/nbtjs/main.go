@@ -7,12 +7,26 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/njhanley/nbt"
 )
 
+type stringLiteral struct {
+	s string
+}
+
+func (l *stringLiteral) String() string {
+	return l.s
+}
+
+func (l *stringLiteral) Set(s string) (err error) {
+	l.s, err = strconv.Unquote(`"` + s + `"`)
+	return err
+}
+
 var options struct {
-	indent        string
+	indent        stringLiteral
 	revert        bool
 	sortCompounds bool
 	gzip          bool
@@ -21,7 +35,7 @@ var options struct {
 }
 
 func init() {
-	flag.StringVar(&options.indent, "i", "", "indent output JSON with string")
+	flag.Var(&options.indent, "i", "indent output JSON with string")
 	flag.BoolVar(&options.revert, "r", false, "revert JSON to NBT")
 	flag.BoolVar(&options.sortCompounds, "s", false, "write compound tags in lexically sorted order")
 	flag.BoolVar(&options.gzip, "z", false, "gzip the output NBT")
@@ -94,7 +108,7 @@ func nbtToJSON(in *os.File, out *os.File) {
 	}
 
 	enc := json.NewEncoder(out)
-	enc.SetIndent("", options.indent)
+	enc.SetIndent("", options.indent.String())
 
 	if err := enc.Encode(tag); err != nil {
 		fatal(out.Name(), err)
