@@ -81,6 +81,10 @@ func nbtToJSON(in *os.File, out *os.File) {
 
 		dec = nbt.NewDecoder(r)
 	} else {
+		_, err := in.Seek(0, 0)
+		if err != nil {
+			fatal(in.Name(), err)
+		}
 		dec = nbt.NewDecoder(in)
 	}
 
